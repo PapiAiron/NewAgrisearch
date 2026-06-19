@@ -189,6 +189,15 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
+
+        html:has(body.auth-body),
+        body.auth-body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background-color: #0d1f13;
+        }
         
         @media (max-width: 640px) {
             .form-input {
@@ -256,7 +265,7 @@
     
     {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body class="{% if 'user_id' not in session %}auth-body{% endif %}">
     {% if 'user_id' in session %}
     <!-- Sidebar Backdrop (Mobile) -->
     <div id="sidebarBackdrop" class="fixed inset-0 bg-black/50 z-30"></div>
@@ -430,7 +439,8 @@
     </aside>
     {% endif %}
     
-    <!-- Top Navigation Bar (Minimal) -->
+   <!-- Top Navigation Bar (Minimal) -->
+    {% if not (request.endpoint and request.endpoint.startswith('auth.')) %}
     <nav class="navbar{% if 'user_id' not in session %} auth-page{% endif %}">
         <div class="px-4 sm:px-6 lg:px-8 py-4">
             <div class="flex justify-between items-center">
@@ -467,6 +477,7 @@
             </div>
         </div>
     </nav>
+    {% endif %}
     
     <!-- Main Content Wrapper -->
     <main class="transition-all duration-300{% if 'user_id' not in session %} auth-page{% endif %}">
@@ -496,7 +507,7 @@
     </main>
     
     <!-- Footer (hidden on dashboard, farm, livestock, health, crop, supply, and distribution routes) -->
-    {% if request.endpoint and not request.endpoint.startswith('dashboard') and not request.endpoint.startswith('farm') and not request.endpoint.startswith('livestock') and not request.endpoint.startswith('health') and not request.endpoint.startswith('crop') and not request.endpoint.startswith('supply') and not request.endpoint.startswith('distribution') %}
+    {% if request.endpoint and not request.endpoint.startswith('dashboard') and not request.endpoint.startswith('farm') and not request.endpoint.startswith('livestock') and not request.endpoint.startswith('health') and not request.endpoint.startswith('crop') and not request.endpoint.startswith('supply') and not request.endpoint.startswith('distribution') and not request.endpoint.startswith('auth') %}
     <footer class="bg-gray-900 text-white mt-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">

@@ -2,156 +2,224 @@
 
 {% block title %}Register - AgriSearch{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@700;800&display=swap">
+<style>
+  :root{
+    --auth-g:#1a6b3e; --auth-g2:#22c17a; --auth-g3:#d4f5e5; --auth-g4:#0d4a28;
+    --auth-ink:#0d1f13; --auth-muted:#527063; --auth-line:#cce8d8;
+  }
+  .auth-wrap{
+    min-height:100svh;
+    display:flex;align-items:center;justify-content:center;
+    padding:48px 16px;
+    background:linear-gradient(170deg,#0d2a16 0%,#0d1f13 55%,#071510 100%);
+    position:relative;overflow:hidden;
+  }
+  .auth-orb{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none}
+  .auth-orb1{width:480px;height:480px;background:rgba(34,193,122,.14);top:-140px;left:-160px}
+  .auth-orb2{width:380px;height:380px;background:rgba(22,120,68,.2);bottom:-120px;right:-100px}
+  .auth-card{
+    position:relative;z-index:2;width:100%;max-width:460px;
+    background:#fff;border-radius:22px;
+    box-shadow:0 24px 80px rgba(0,0,0,.35);
+    padding:clamp(28px,5vw,40px);
+    animation:authFadeUp .6s ease both;
+  }
+  .auth-kicker{
+    display:inline-flex;align-items:center;gap:8px;
+    background:rgba(34,193,122,.12);border:1px solid rgba(34,193,122,.35);
+    color:var(--auth-g);border-radius:999px;
+    padding:6px 14px;font-size:11px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.7px;margin-bottom:18px;
+  }
+  .auth-icon-circle{
+    width:64px;height:64px;border-radius:50%;
+    background:linear-gradient(135deg,var(--auth-g3),#fff);
+    border:1px solid var(--auth-line);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 18px;
+  }
+  .auth-icon-circle img{width:36px;height:36px;object-fit:contain}
+  .auth-title{
+    font-family:'Syne',sans-serif;font-weight:800;letter-spacing:-.6px;
+    font-size:clamp(24px,4vw,30px);color:var(--auth-ink);text-align:center;
+  }
+  .auth-sub{color:var(--auth-muted);font-size:14px;text-align:center;margin-top:6px}
+  .auth-label{
+    display:flex;align-items:center;gap:6px;
+    font-size:13px;font-weight:600;color:var(--auth-ink);margin-bottom:6px;
+  }
+  .auth-label i{color:var(--auth-g);width:14px;text-align:center}
+  .auth-input{
+    width:100%;padding:11px 14px;border:1.5px solid var(--auth-line);
+    border-radius:10px;font-size:15px;font-family:'Inter',sans-serif;
+    background:#f8fcfa;transition:border-color .2s,box-shadow .2s;
+    appearance:none;
+  }
+  .auth-input:focus{
+    outline:none;border-color:var(--auth-g2);
+    box-shadow:0 0 0 3px rgba(34,193,122,.14);background:#fff;
+  }
+  select.auth-input{
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23527063' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 14px center;
+    padding-right:38px;cursor:pointer;
+  }
+  .auth-hint{font-size:11.5px;color:var(--auth-muted);margin-top:5px}
+  .auth-field{position:relative}
+  .auth-pwd-toggle{
+    position:absolute;right:6px;top:50%;transform:translateY(-50%);
+    background:none;border:none;cursor:pointer;
+    color:var(--auth-muted);padding:8px;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    transition:color .15s,background .15s;
+  }
+  .auth-pwd-toggle:hover{color:var(--auth-g);background:var(--auth-g3)}
+  .auth-field .auth-input{padding-right:42px}
+  .auth-btn{
+    width:100%;border:none;border-radius:12px;padding:13px;
+    font-size:15px;font-weight:700;color:#fff;cursor:pointer;
+    font-family:'Inter',sans-serif;
+    background:linear-gradient(120deg,var(--auth-g),var(--auth-g2));
+    box-shadow:0 8px 24px rgba(34,193,122,.3);
+    transition:transform .18s,box-shadow .18s;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .auth-btn:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(34,193,122,.42)}
+  .auth-btn:active{transform:translateY(0)}
+  .auth-divider{display:flex;align-items:center;gap:12px;margin:22px 0;color:#a9c4b3;font-size:12px}
+  .auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--auth-line)}
+  .auth-links{text-align:center;font-size:13.5px;color:var(--auth-muted);display:flex;flex-direction:column;gap:9px}
+  .auth-links a{color:var(--auth-g);font-weight:700}
+  .auth-links a:hover{color:var(--auth-g4);text-decoration:underline}
+  .auth-foot{
+    text-align:center;margin-top:26px;font-size:12.5px;
+    color:rgba(255,255,255,.5);position:relative;z-index:2;
+  }
+  .auth-match-msg{font-size:11.5px;margin-top:5px;display:none}
+  .auth-match-msg.show{display:block}
+  .auth-match-msg.ok{color:var(--auth-g)}
+  .auth-match-msg.bad{color:#dc2626}
+  @keyframes authFadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){.auth-card{animation:none}}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="min-h-screen flex items-center justify-center px-4 py-12">
-    <div class="w-full max-w-md">
-        <!-- Card -->
-        <div class="card p-8">
-            <!-- Header -->
-            <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
-                    <img src="{{ url_for('static', filename='agrisearch_logo.png') }}" alt="AgriSearch Logo" class="w-10 h-10 object-contain">
-                </div>
-                <h1 class="text-3xl font-bold text-gray-900">Create Account</h1>
-                <p class="text-gray-600 mt-2">Join AgriSearch today</p>
-            </div>
-            
-            <!-- Form -->
-            <form method="POST" class="space-y-4">
-                <!-- Full Name -->
-                <div>
-                    <label for="full_name" class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-id-card mr-2"></i>Full Name
-                    </label>
-                    <input 
-                        type="text" 
-                        id="full_name" 
-                        name="full_name" 
-                        class="form-input"
-                        placeholder="Juan Dela Cruz"
-                        required
-                        autofocus
-                    >
-                </div>
-                
-                <!-- Email -->
-                <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-envelope mr-2"></i>Email
-                    </label>
-                    <input 
-                        type="email" 
-                        id="email" 
-                        name="email" 
-                        class="form-input"
-                        placeholder="juan@example.com"
-                        required
-                    >
-                </div>
-                
-                <!-- Username -->
-                <div>
-                    <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-user mr-2"></i>Username
-                    </label>
-                    <input 
-                        type="text" 
-                        id="username" 
-                        name="username" 
-                        class="form-input"
-                        placeholder="juandelacruz"
-                        minlength="3"
-                        required
-                    >
-                    <p class="text-xs text-gray-500 mt-1">At least 3 characters</p>
-                </div>
-                
-                <!-- Barangay -->
-                <div>
-                    <label for="barangay_id" class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-map-marker-alt mr-2"></i>Barangay
-                    </label>
-                    <select 
-                        id="barangay_id" 
-                        name="barangay_id" 
-                        class="form-input"
-                        required
-                    >
-                        <option value="">Select your barangay</option>
-                        {% for id, barangay in barangays.items() %}
-                        <option value="{{ id }}">{{ barangay.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <!-- Password -->
-                <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-lock mr-2"></i>Password
-                    </label>
-                    <input 
-                        type="password" 
-                        id="password" 
-                        name="password" 
-                        class="form-input"
-                        placeholder="••••••••"
-                        minlength="8"
-                        required
-                    >
-                    <p class="text-xs text-gray-500 mt-1">At least 8 characters</p>
-                </div>
-                
-                <!-- Confirm Password -->
-                <div>
-                    <label for="password_confirm" class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-lock mr-2"></i>Confirm Password
-                    </label>
-                    <input 
-                        type="password" 
-                        id="password_confirm" 
-                        name="password_confirm" 
-                        class="form-input"
-                        placeholder="••••••••"
-                        required
-                    >
-                </div>
-                
-                <!-- Submit Button -->
-                <button type="submit" class="btn-primary w-full mt-6">
-                    <i class="fas fa-user-check mr-2"></i>Create Account
-                </button>
-            </form>
-            
-            <!-- Divider -->
-            <div class="relative my-6">
-                <div class="absolute inset-0 flex items-center">
-                    <div class="w-full border-t border-gray-300"></div>
-                </div>
-                <div class="relative flex justify-center text-sm">
-                    <span class="px-2 bg-white text-gray-500">or</span>
-                </div>
-            </div>
-            
-            <!-- Link -->
-            <div class="text-center text-sm text-gray-600">
-                <p>
-                    Already have an account? 
-                    <a href="{{ url_for('auth.login') }}" class="text-green-600 font-semibold hover:text-green-700">
-                        Sign in
-                    </a>
-                </p>
-                <p class="mt-2">
-                    <a href="{{ url_for('index') }}" class="text-green-600 font-semibold hover:text-green-700">
-                        Back to Home
-                    </a>
-                </p>
-            </div>
+<div class="auth-wrap">
+  <div class="auth-orb auth-orb1"></div>
+  <div class="auth-orb auth-orb2"></div>
+
+  <div style="position:relative;z-index:2;width:100%;display:flex;flex-direction:column;align-items:center">
+    <div class="auth-card">
+      <div style="text-align:center">
+        <span class="auth-kicker"><i class="fas fa-map-marker-alt"></i> Victoria, Laguna</span>
+      </div>
+      <a href="/" class="auth-icon-circle">
+        <img src="{{ url_for('static', filename='agrisearch_logo.png') }}" alt="AgriSearch Logo">
+      </a>
+      <h1 class="auth-title">Create Account</h1>
+      <p class="auth-sub">Join AgriSearch today</p>
+
+      <form method="POST" class="space-y-4" style="margin-top:26px" novalidate>
+        <!-- Full Name -->
+        <div>
+          <label for="full_name" class="auth-label"><i class="fas fa-id-card"></i>Full Name</label>
+          <input type="text" id="full_name" name="full_name" class="auth-input" placeholder="Juan Dela Cruz" required autofocus>
         </div>
-        
-        <!-- Footer Note -->
-        <div class="text-center mt-8 text-sm text-gray-600">
-            <p>🌾 Empowering farmers in Victoria, Laguna</p>
+
+        <!-- Email -->
+        <div>
+          <label for="email" class="auth-label"><i class="fas fa-envelope"></i>Email</label>
+          <input type="email" id="email" name="email" class="auth-input" placeholder="juan@example.com" required>
         </div>
+
+        <!-- Username -->
+        <div>
+          <label for="username" class="auth-label"><i class="fas fa-user"></i>Username</label>
+          <input type="text" id="username" name="username" class="auth-input" placeholder="juandelacruz" minlength="3" required>
+          <p class="auth-hint">At least 3 characters</p>
+        </div>
+
+        <!-- Barangay -->
+        <div>
+          <label for="barangay_id" class="auth-label"><i class="fas fa-map-marker-alt"></i>Barangay</label>
+          <select id="barangay_id" name="barangay_id" class="auth-input" required>
+            <option value="">Select your barangay</option>
+            {% for id, barangay in barangays.items() %}
+            <option value="{{ id }}">{{ barangay.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Password -->
+        <div>
+          <label for="password" class="auth-label"><i class="fas fa-lock"></i>Password</label>
+          <div class="auth-field">
+            <input type="password" id="password" name="password" class="auth-input" placeholder="••••••••" minlength="8" required oninput="authCheckMatch()">
+            <button type="button" class="auth-pwd-toggle" onclick="authTogglePwd('password', this)" aria-label="Show password">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
+          <p class="auth-hint">At least 8 characters</p>
+        </div>
+
+        <!-- Confirm Password -->
+        <div>
+          <label for="password_confirm" class="auth-label"><i class="fas fa-lock"></i>Confirm Password</label>
+          <div class="auth-field">
+            <input type="password" id="password_confirm" name="password_confirm" class="auth-input" placeholder="••••••••" required oninput="authCheckMatch()">
+            <button type="button" class="auth-pwd-toggle" onclick="authTogglePwd('password_confirm', this)" aria-label="Show password">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
+          <p id="authMatchMsg" class="auth-match-msg"></p>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="auth-btn" style="margin-top:6px">
+          <i class="fas fa-user-check"></i>Create Account
+        </button>
+      </form>
+
+      <div class="auth-divider">or</div>
+
+      <div class="auth-links">
+        <p>Already have an account? <a href="{{ url_for('auth.login') }}">Sign in</a></p>
+        <p><a href="{{ url_for('index') }}">Back to Home</a></p>
+      </div>
     </div>
+
+    <div class="auth-foot">🌾 Empowering farmers in Victoria, Laguna</div>
+  </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function authTogglePwd(id, btn) {
+    const input = document.getElementById(id);
+    const icon = btn.querySelector('i');
+    const showing = input.type === 'text';
+    input.type = showing ? 'password' : 'text';
+    icon.classList.toggle('fa-eye', showing);
+    icon.classList.toggle('fa-eye-slash', !showing);
+    btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+  }
+
+  function authCheckMatch() {
+    const pwd = document.getElementById('password').value;
+    const confirm = document.getElementById('password_confirm').value;
+    const msg = document.getElementById('authMatchMsg');
+    if (!confirm) { msg.classList.remove('show'); return; }
+    msg.classList.add('show');
+    if (pwd === confirm) {
+      msg.textContent = '✓ Passwords match';
+      msg.classList.add('ok'); msg.classList.remove('bad');
+    } else {
+      msg.textContent = '✕ Passwords do not match';
+      msg.classList.add('bad'); msg.classList.remove('ok');
+    }
+  }
+</script>
 {% endblock %}
