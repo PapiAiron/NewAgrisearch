@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Welcome Section -->
+    <div class="mb-12">
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">
+            Welcome, <span class="text-gradient">{{ user.full_name }}</span>!
+        </h1>
+        <p class="text-lg text-gray-600">
+            <i class="fas fa-map-marker-alt text-green-600 mr-2"></i>
+            Barangay: <strong>{{ user.barangay_name }}</strong> | Role: <strong>{{ user.role.replace('_', ' ').title() }}</strong>
+        </p>
+    </div>
+    
+    <!-- Main Grid: Quick Actions & Recent Activity -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <!-- Quick Actions Card -->
+        <div class="lg:col-span-1">
+            <div class="card p-8 h-full">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-bolt text-blue-600 mr-3"></i>Quick Actions
+                </h2>
+                
+                <div class="space-y-3">
+                    <!-- View Profile -->
+                    <a href="{{ url_for('dashboard.profile') }}" class="w-full block px-4 py-3 rounded-lg border border-gray-200 hover:bg-green-50 hover:border-green-300 transition">
+                        <div class="flex items-center">
+                            <i class="fas fa-user-circle text-green-600 mr-3 text-lg"></i>
+                            <span class="font-medium text-gray-900">View Profile</span>
+                        </div>
+                    </a>
+                    
+                    <!-- View Farms -->
+                    <a href="{{ url_for('farm.list_farms') }}" class="w-full block px-4 py-3 rounded-lg border border-gray-200 hover:bg-green-50 hover:border-green-300 transition">
+                        <div class="flex items-center">
+                            <i class="fas fa-field text-green-600 mr-3 text-lg"></i>
+                            <span class="font-medium text-gray-900">View Farms</span>
+                        </div>
+                    </a>
+                    
+                    <!-- Change Password -->
+                    <button class="w-full text-left px-4 py-3 rounded-lg border border-gray-200 hover:bg-orange-50 hover:border-orange-300 transition">
+                        <div class="flex items-center">
+                            <i class="fas fa-key text-orange-600 mr-3 text-lg"></i>
+                            <span class="font-medium text-gray-900">Change Password</span>
+                        </div>
+                    </button>
+                    
+                    <!-- Help & Support -->
+                    <button class="w-full text-left px-4 py-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition">
+                        <div class="flex items-center">
+                            <i class="fas fa-life-ring text-blue-600 mr-3 text-lg"></i>
+                            <span class="font-medium text-gray-900">Help & Support</span>
+                        </div>
+                    </button>
+                </div>
+                
+                <!-- Security Status -->
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4 mt-6">
+                    <p class="text-sm text-green-900 font-semibold mb-2">
+                        <i class="fas fa-shield-alt mr-2"></i>Account Secure
+                    </p>
+                    <p class="text-xs text-green-700">
+                        Your account is protected with a secure password.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity Card -->
+        <div class="lg:col-span-2">
+            <div class="card p-8 h-full">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-history text-purple-600 mr-3"></i>Account Information
+                </h2>
+                
+                <div class="space-y-6">
+                    <!-- Account Status -->
+                    <div class="flex items-start border-b pb-6 last:border-b-0">
+                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mr-4 flex-shrink-0">
+                            <i class="fas fa-check-circle text-green-600 text-sm"></i>
+                        </div>
+                        <div class="flex-grow">
+                            <p class="font-medium text-gray-900">Account Status</p>
+                            <p class="text-sm text-gray-600 mt-1">
+                                {% if user.is_active %}
+                                <span class="text-green-600 font-semibold">Active</span>
+                                {% else %}
+                                <span class="text-red-600 font-semibold">Inactive</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Verification Status -->
+                    <div class="flex items-start border-b pb-6 last:border-b-0">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-4 flex-shrink-0">
+                            {% if user.is_verified %}
+                            <i class="fas fa-check text-blue-600 text-sm"></i>
+                            {% else %}
+                            <i class="fas fa-exclamation text-orange-600 text-sm"></i>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow">
+                            <p class="font-medium text-gray-900">Verification Status</p>
+                            <p class="text-sm text-gray-600 mt-1">
+                                {% if user.is_verified %}
+                                <span class="text-green-600 font-semibold">Verified</span>
+                                {% else %}
+                                <span class="text-orange-600 font-semibold">Unverified</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Last Login -->
+                    <div class="flex items-start border-b pb-6 last:border-b-0">
+                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mr-4 flex-shrink-0">
+                            <i class="fas fa-sign-in-alt text-green-600 text-sm"></i>
+                        </div>
+                        <div class="flex-grow">
+                            <p class="font-medium text-gray-900">Last Login</p>
+                            <p class="text-sm text-gray-600 mt-1">
+                                {% if user.last_login %}
+                                {{ user.last_login.strftime('%B %d, %Y at %I:%M %p') }}
+                                {% else %}
+                                First time login
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Member Since -->
+                    <div class="flex items-start">
+                        <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mr-4 flex-shrink-0">
+                            <i class="fas fa-calendar-alt text-purple-600 text-sm"></i>
+                        </div>
+                        <div class="flex-grow">
+                            <p class="font-medium text-gray-900">Member Since</p>
+                            <p class="text-sm text-gray-600 mt-1">
+                                {{ user.created_at.strftime('%B %d, %Y') }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Feature Cards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
+        <!-- Farm Management Card -->
+        <div class="card p-8 border-2 border-green-200 bg-gradient-to-br from-green-50 to-transparent">
+            <div class="flex items-start justify-between mb-4">
+                <h3 class="text-2xl font-bold text-gray-900">
+                    <i class="fas fa-tractor text-green-600 mr-2"></i>Farm Management
+                </h3>
+                <span class="text-xs bg-green-100 text-green-800 px-3 py-1 rounded-full font-semibold">Active</span>
+            </div>
+            <p class="text-gray-600 mb-6">Manage your farms and livestock information with our advanced system.</p>
+            <a href="{{ url_for('farm.list_farms') }}" class="inline-block px-6 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">
+                <i class="fas fa-arrow-right mr-2"></i>Go to Farms
+            </a>
+        </div>
+        
+        <!-- Location Mapping Card -->
+        <div class="card p-8 border-2 border-dashed border-gray-300">
+            <div class="flex items-start justify-between mb-4">
+                <h3 class="text-2xl font-bold text-gray-900">
+                    <i class="fas fa-map text-blue-600 mr-2"></i>Location Mapping
+                </h3>
+                <span class="text-xs bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-semibold">Coming Soon</span>
+            </div>
+            <p class="text-gray-600 mb-6">Visualize farms and livestock locations on interactive maps.</p>
+            <button class="px-6 py-2 bg-gray-300 text-gray-600 rounded-lg font-semibold cursor-not-allowed opacity-60">
+                <i class="fas fa-clock mr-2"></i>Coming Soon
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

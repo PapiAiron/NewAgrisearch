@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}
+Edit Crop - AgriSearch
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <a href="{{ url_for('crop.view_crop', crop_id=crop.id) }}" class="text-green-600 hover:text-green-700 mb-4 inline-block">
+            <i class="fas fa-arrow-left mr-2"></i>Back to Crop
+        </a>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Edit Crop</h1>
+        <p class="text-gray-600">Update crop information and progress</p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="max-w-2xl">
+        <form method="POST" class="card p-6 md:p-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Farm (Read-only) -->
+                <div class="md:col-span-2">
+                    <label for="farm" class="form-label">Farm</label>
+                    <div class="form-input bg-gray-100 text-gray-600">{{ crop.farm.name }}</div>
+                    <small class="text-gray-500">Farm cannot be changed after creation</small>
+                </div>
+
+                <!-- Crop Type -->
+                <div>
+                    <label for="crop_type" class="form-label">Crop Type</label>
+                    <input type="text" id="crop_type" name="crop_type" 
+                           class="form-input" value="{{ crop.crop_type }}" required>
+                </div>
+
+                <!-- Status -->
+                <div>
+                    <label for="status" class="form-label">Status</label>
+                    <select id="status" name="status" class="form-input" required>
+                        {% for st in statuses %}
+                            <option value="{{ st }}" {% if crop.status == st %}selected{% endif %}>{{ st|title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Planting Date -->
+                <div>
+                    <label for="planting_date" class="form-label">Planting Date</label>
+                    <input type="date" id="planting_date" name="planting_date" 
+                           class="form-input" value="{{ crop.planting_date.strftime('%Y-%m-%d') }}" required>
+                </div>
+
+                <!-- Expected Harvest Date -->
+                <div>
+                    <label for="expected_harvest_date" class="form-label">Expected Harvest Date</label>
+                    <input type="date" id="expected_harvest_date" name="expected_harvest_date" 
+                           class="form-input" value="{{ crop.expected_harvest_date.strftime('%Y-%m-%d') if crop.expected_harvest_date else '' }}">
+                </div>
+
+                <!-- Current Growth Stage -->
+                <div>
+                    <label for="current_growth_stage" class="form-label">Current Growth Stage</label>
+                    <select id="current_growth_stage" name="current_growth_stage" class="form-input" required>
+                        {% for stage in growth_stages %}
+                            <option value="{{ stage }}" {% if crop.current_growth_stage == stage %}selected{% endif %}>{{ stage|title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Yield Amount -->
+                <div>
+                    <label for="yield_amount" class="form-label">Yield Amount</label>
+                    <input type="number" id="yield_amount" name="yield_amount" step="0.1"
+                           class="form-input" value="{{ crop.yield_amount or '' }}" placeholder="Enter yield amount">
+                </div>
+
+                <!-- Yield Unit -->
+                <div>
+                    <label for="yield_unit" class="form-label">Yield Unit</label>
+                    <select id="yield_unit" name="yield_unit" class="form-input">
+                        <option value="kg" {% if crop.yield_unit == 'kg' %}selected{% endif %}>Kilograms (kg)</option>
+                        <option value="bags" {% if crop.yield_unit == 'bags' %}selected{% endif %}>Bags</option>
+                        <option value="tons" {% if crop.yield_unit == 'tons' %}selected{% endif %}>Tons</option>
+                        <option value="crates" {% if crop.yield_unit == 'crates' %}selected{% endif %}>Crates</option>
+                    </select>
+                </div>
+
+                <!-- Notes -->
+                <div class="md:col-span-2">
+                    <label for="notes" class="form-label">Notes</label>
+                    <textarea id="notes" name="notes" rows="4" class="form-input" 
+                              placeholder="Add notes about this crop...">{{ crop.notes or '' }}</textarea>
+                </div>
+            </div>
+
+            <!-- Metadata -->
+            <div class="border-t border-gray-200 mt-8 pt-4">
+                <p class="text-xs text-gray-500">
+                    <strong>Created:</strong> {{ crop.created_at.strftime('%B %d, %Y at %I:%M %p') }}<br>
+                    <strong>Last Updated:</strong> {{ crop.updated_at.strftime('%B %d, %Y at %I:%M %p') }}
+                </p>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex gap-3 mt-8">
+                <button type="submit" class="btn-primary flex-1">
+                    <i class="fas fa-check mr-2"></i>Save Changes
+                </button>
+                <a href="{{ url_for('crop.view_crop', crop_id=crop.id) }}" class="btn-secondary flex-1 text-center">
+                    <i class="fas fa-times mr-2"></i>Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Information Panel -->
+    <div class="max-w-2xl mt-8">
+        <div class="card bg-blue-50 border border-blue-200 p-6">
+            <h3 class="text-lg font-semibold text-blue-900 mb-4">
+                <i class="fas fa-lightbulb mr-2"></i>About Growth Stages
+            </h3>
+            <div class="space-y-3 text-blue-800 text-sm">
+                <div>
+                    <strong>Seedling:</strong> Early growth stage with small shoots
+                </div>
+                <div>
+                    <strong>Vegetative:</strong> Plant focuses on leaf and stem development
+                </div>
+                <div>
+                    <strong>Flowering:</strong> Plant produces flowers and buds
+                </div>
+                <div>
+                    <strong>Fruiting:</strong> Fruits or grain heads develop
+                </div>
+                <div>
+                    <strong>Mature:</strong> Crop is ready for harvest
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.875rem;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+</style>
+{% endblock %}
+

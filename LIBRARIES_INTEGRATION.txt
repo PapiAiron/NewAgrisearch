@@ -1,0 +1,232 @@
+================================================================
+AGRISEARCH — LEAFLET & GROQ INTEGRATION DOCUMENTATION
+================================================================
+Date: March 5, 2026
+Project: AgriSearch Farm Management System
+Location: Victoria, Laguna, Philippines
+
+
+================================================================
+PART 1: LEAFLET (Interactive Map Library)
+================================================================
+
+WHAT IS LEAFLET?
+----------------
+Leaflet (https://leafletjs.com) is a free, open-source JavaScript
+library for creating interactive maps in web applications. It is
+lightweight (~42KB), mobile-friendly, and widely used for
+displaying geographic data, markers, and overlays.
+
+HOW WE GOT IT
+-------------
+Leaflet is loaded directly from a CDN (Content Delivery Network) —
+no installation or npm/pip required. We use version 1.9.4.
+
+We also use the Leaflet.heat plugin (v0.2.0) for heatmap overlays.
+
+The CSS and JS are included in each template that needs a map:
+
+    CSS (in <head>):
+        <link rel="stylesheet"
+              href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    JS (before </body>):
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    Heatmap plugin (farm map only):
+        <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+No entry in requirements.txt — it is purely a frontend library.
+
+TILE LAYERS (Map Data Source)
+------------------------------
+We use two tile providers, both free:
+
+  1. OpenStreetMap (default street view):
+       https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
+
+  2. Esri World Imagery (satellite view):
+       https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/
+       MapServer/tile/{z}/{y}/{x}
+
+  3. Google Satellite (used in farm detail view):
+       https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}
+
+These are accessed at runtime in the user's browser — no API key
+required for OpenStreetMap or Esri tile layers.
+
+HOW WE IMPLEMENTED LEAFLET IN THE SYSTEM
+-----------------------------------------
+
+1. FARM MAP PAGE (app/templates/farm/map.html)
+   - Full-screen interactive map of Victoria, Laguna
+   - Centered at coordinates [14.2270, 121.3281] (Victoria center)
+   - Bounded to [[14.1824, 121.2974], [14.2650, 121.3718]]
+   - Features:
+       * Color-coded markers per barangay (9 barangays with unique colors)
+       * Barangay boundary overlays loaded from /farm/api/barangay-boundaries
+       * Heatmap layer toggle (leaflet.heat plugin)
+       * Satellite / Street Map toggle
+       * Radius circle drawing tool for proximity searches
+       * Side panel showing farm details on marker click
+   - Farm data is fetched via Flask API: GET /farm/api/farms-geojson
+     which returns a GeoJSON FeatureCollection with farm markers
+
+2. FARM CREATE PAGE (app/templates/farm/create.html)
+   - Embedded 300px map for picking a farm's GPS location
+   - User clicks on the map to place a draggable pin
+   - Coordinates (latitude, longitude) are auto-filled into hidden
+     form inputs: #latInput and #lngInput
+   - Custom green teardrop pin icon using L.divIcon
+   - Map is bounded to Victoria area on load
+
+3. FARM DETAIL PAGE (app/templates/farm/detail.html)
+   - Embedded 280px map showing the farm's saved location
+   - Marker is placed at the farm's stored latitude/longitude
+   - Popup shows farm name and barangay
+   - Toggle between Street Map and Satellite view
+   - View is centered and zoomed (zoom level 16) on the farm
+
+BACKEND SUPPORT FOR LEAFLET
+-----------------------------
+File: app/routes/farm.py
+
+  GET  /farm/api/farms-geojson
+       Returns all farms as GeoJSON with properties:
+       id, name, barangay, crop_type, owner, livestock_count, crop_count,
+       latitude, longitude
+
+  GET  /farm/api/barangay-boundaries
+       Returns GeoJSON polygons for the 9 barangays of Victoria, Laguna
+       (sourced from OpenStreetMap or approximate coordinates)
+
+
+================================================================
+PART 2: GROQ (AI Language Model API — Powers AgriBot)
+================================================================
+
+WHAT IS GROQ?
+-------------
+Groq (https://groq.com) is an AI cloud service that provides fast
+inference for large language models (LLMs). We use it to power
+AgriBot, the agricultural chatbot assistant built into AgriSearch.
+
+The specific model used is:
+    llama-3.3-70b-versatile
+    (Meta's LLaMA 3.3, 70 billion parameters — hosted on Groq Cloud)
+
+HOW WE GOT IT
+-------------
+Step 1 — Create a free Groq account:
+    Go to https://console.groq.com
+    Sign up for a free account
+
+Step 2 — Generate an API key:
+    In the Groq Console, go to "API Keys"
+    Click "Create API Key"
+    Copy the key (starts with "gsk_...")
+
+Step 3 — Install the Python SDK:
+    The Groq Python client is listed in requirements.txt:
+
+        groq>=0.4.0
+
+    Install it with:
+        pip install groq
+
+    Or install all project dependencies at once:
+        pip install -r requirements.txt
+
+Step 4 — Store the API key securely in .env:
+    In the project root, add to your .env file:
+
+        GROQ_API_KEY=gsk_your_api_key_here
+
+    The .env file is excluded from version control (.gitignore)
+    so the key is never exposed publicly.
+
+HOW WE IMPLEMENTED GROQ IN THE SYSTEM
+---------------------------------------
+
+FILE: app/routes/chatbot.py
+
+  The chatbot Blueprint handles all AgriBot functionality:
+
+  1. CLIENT INITIALIZATION
+       def get_groq_client():
+           api_key = os.getenv('GROQ_API_KEY')
+           if not api_key:
+               return None
+           return Groq(api_key=api_key)
+
+     The key is loaded from the environment at runtime using
+     os.getenv(), never hardcoded in source.
+
+  2. SYSTEM PROMPT
+     AgriBot uses a detailed system prompt that:
+       - Identifies it as "AgriBot" for the AgriSearch system
+       - Restricts it to agriculture-only topics (crops, livestock,
+         soil, Philippine farming context, etc.)
+       - Instructs it to decline non-agriculture questions
+       - Gives instructions for formatting and Philippine context
+
+  3. CHAT ENDPOINT
+     POST /chatbot/message
+       - Requires user to be logged in (session-based auth)
+       - Retrieves or creates a ChatConversation record in the DB
+       - Saves the user message to the ChatMessage table
+       - Builds context from the last 12 messages in the conversation
+       - Calls Groq API:
+             client.chat.completions.create(
+                 model='llama-3.3-70b-versatile',
+                 messages=[...],
+                 max_tokens=600,
+                 temperature=0.7,
+             )
+       - Saves the assistant reply to the DB
+       - Auto-titles the conversation from the first message
+       - Returns JSON: { "reply": "...", "conv_id": ... }
+
+  4. CONVERSATION STORAGE
+     File: app/models/chat.py
+       - ChatConversation — one per user conversation session
+         fields: id, user_id, title, created_at, updated_at
+       - ChatMessage — individual messages
+         fields: id, conversation_id, role (user/assistant), content,
+                 created_at
+
+  5. FRONTEND INTEGRATION
+     The AgriBot chat widget is embedded in base.html and appears
+     as a floating chat bubble on all pages for logged-in users.
+     It communicates with the backend via fetch() API calls.
+
+GROQ API RATE LIMITS (Free Tier as of 2026)
+---------------------------------------------
+  - 30 requests per minute
+  - 6,000 tokens per minute
+  - 500,000 tokens per day
+  These limits are sufficient for typical usage in AgriSearch.
+
+
+================================================================
+SUMMARY TABLE
+================================================================
+
+  Library/Service   | How Obtained          | Where Used
+  ------------------|----------------------|----------------------------
+  Leaflet 1.9.4     | CDN (unpkg.com)       | farm/map.html,
+                    | No installation       | farm/create.html,
+                    | required              | farm/detail.html
+  ------------------|----------------------|----------------------------
+  Leaflet.heat 0.2.0| CDN (unpkg.com)       | farm/map.html (heatmap)
+  ------------------|----------------------|----------------------------
+  Groq Python SDK   | pip install groq      | app/routes/chatbot.py
+  (groq>=0.4.0)     | requirements.txt      | (AgriBot chatbot)
+  ------------------|----------------------|----------------------------
+  Groq Cloud API    | Free account at       | Called at runtime from
+  (LLaMA 3.3 70b)   | console.groq.com      | chatbot.py via SDK
+                    | API key in .env       |
+
+================================================================
+END OF DOCUMENT
+================================================================

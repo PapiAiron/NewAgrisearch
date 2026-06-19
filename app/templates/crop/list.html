@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block title %}
+Crops - AgriSearch
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header with Search and Add Button -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Crops</h1>
+            <p class="text-gray-600">Manage and track crop cultivation</p>
+        </div>
+        {% if user.role == 'farmer' %}
+        <a href="{{ url_for('crop.create_crop') }}" class="btn-primary w-full sm:w-auto">
+            <i class="fas fa-plus mr-2"></i>
+            <span class="hidden sm:inline">Add New Crop</span>
+            <span class="sm:hidden"> Add Crop</span>
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Filter Section -->
+    <div class="card p-6 mb-8">
+        <div class="mb-4">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                <i class="fas fa-filter text-green-600 mr-2"></i>Filters & Search
+            </h3>
+        </div>
+        <form method="GET" action="{{ url_for('crop.list_crops') }}" class="space-y-4" id="searchForm">
+            <!-- Search Box with Clear Button -->
+            <div>
+                <label for="search" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-search text-green-600 mr-1"></i>Search Crops
+                    <span class="text-xs text-gray-500 font-normal ml-1">(Ctrl+K)</span>
+                </label>
+                <div class="relative">
+                    <input type="text" id="search" name="search" placeholder="Search by crop type, farm, or notes..." value="{{ search_query }}" class="w-full px-4 py-3 pr-10 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition" onkeyup="autoSubmitSearch(this.form)" />
+                    {% if search_query %}
+                    <button type="button" onclick="document.getElementById('search').value=''; autoSubmitSearch(document.getElementById('searchForm'));" class="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 transition">
+                        <i class="fas fa-times-circle text-lg"></i>
+                    </button>
+                    {% endif %}
+                </div>
+                {% if crops|length > 0 %}<p class="text-xs text-gray-500 mt-1"><strong>{{ crops|length }}</strong> crop{{ 's' if crops|length != 1 else '' }} found</p>{% endif %}
+            </div>
+
+            <!-- Filter Dropdowns Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Crop Type Filter -->
+                {% if crop_type_options|length > 0 %}
+            <div>
+                <label for="crop_type" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-leaf text-green-600 mr-1"></i>Crop Type
+                </label>
+                <select id="crop_type" name="crop_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" onchange="this.form.submit()">
+                    <option value="">All Crops</option>
+                    {% for option in crop_type_options %}
+                    <option value="{{ option }}" {% if option == active_crop_type %}selected{% endif %}>{{ option|title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <!-- Status Filter -->
+            {% if status_options|length > 0 %}
+            <div>
+                <label for="status" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-check-circle text-green-600 mr-1"></i>Status
+                </label>
+                <select id="status" name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" onchange="this.form.submit()">
+                    <option value="">All Status</option>
+                    {% for option in status_options %}
+                    <option value="{{ option }}" {% if option == active_status %}selected{% endif %}>{{ option|title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <!-- Growth Stage Filter -->
+            {% if stage_options|length > 0 %}
+            <div>
+                <label for="stage" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-seedling text-green-600 mr-1"></i>Growth Stage
+                </label>
+                <select id="stage" name="stage" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" onchange="this.form.submit()">
+                    <option value="">All Stages</option>
+                    {% for option in stage_options %}
+                    <option value="{{ option }}" {% if option == active_stage %}selected{% endif %}>{{ option|title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <!-- Farm Filter (for admin/coordinator views) -->
+            {% if farm_options|length > 1 and user.role != 'farmer' %}
+            <div>
+                <label for="farm_id" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-field text-green-600 mr-1"></i>Farm
+                </label>
+                <select id="farm_id" name="farm_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" onchange="this.form.submit()">
+                    <option value="">All Farms</option>
+                    {% for option in farm_options %}
+                    <option value="{{ option.id }}" {% if option.id|string == active_farm %}selected{% endif %}>{{ option.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <!-- Clear Filters Button -->
+            <div class="flex items-end">
+                {% if active_crop_type or active_status or active_stage or active_farm or search_query %}
+                <a href="{{ url_for('crop.list_crops') }}" class="w-full px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg text-sm transition text-center flex items-center justify-center gap-2">
+                    <i class="fas fa-times"></i> Clear Filters
+                </a>
+                {% endif %}
+            </div>
+            </div>
+        </form>
+    </div>
+
+    {% if crops %}
+        <!-- Crops Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for crop in crops %}
+                <div class="card hover:shadow-lg transition-shadow duration-300">
+                    <!-- Header -->
+                    <div class="border-b border-gray-200 pb-4 mb-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <h2 class="text-xl font-semibold text-gray-900">{{ crop.crop_type }}</h2>
+                            <span class="badge badge-{{ 'success' if crop.status == 'active' else 'warning' if crop.status == 'harvested' else 'danger' }}">
+                                {{ crop.status|title }}
+                            </span>
+                        </div>
+                        <p class="text-sm text-gray-600">{{ crop.farm.name }}</p>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="space-y-3 mb-4">
+                        <!-- Planting Date -->
+                        <div class="flex justify-between">
+                            <span class="text-gray-700 font-medium">Planted:</span>
+                            <span class="text-gray-900">{{ crop.planting_date.strftime('%b %d, %Y') }}</span>
+                        </div>
+
+                        <!-- Days Since Planting -->
+                        <div class="flex justify-between">
+                            <span class="text-gray-700 font-medium">Days:</span>
+                            <span class="text-gray-900">{{ crop.days_since_planting() }} days old</span>
+                        </div>
+
+                        <!-- Growth Stage -->
+                        <div class="flex justify-between">
+                            <span class="text-gray-700 font-medium">Stage:</span>
+                            <span class="text-gray-900">{{ crop.current_growth_stage|title }}</span>
+                        </div>
+
+                        <!-- Expected Harvest -->
+                        {% if crop.expected_harvest_date %}
+                            <div class="flex justify-between">
+                                <span class="text-gray-700 font-medium">Harvest:</span>
+                                <span class="text-gray-900">{{ crop.expected_harvest_date.strftime('%b %d, %Y') }}</span>
+                            </div>
+
+                            <!-- Days to Harvest -->
+                            {% set days_to_harvest = crop.days_to_harvest() %}
+                            {% if days_to_harvest %}
+                                <div class="flex justify-between">
+                                    <span class="text-gray-700 font-medium">Days Left:</span>
+                                    <span class="text-{{ 'red-600' if days_to_harvest < 0 else 'green-600' }}">
+                                        {% if days_to_harvest < 0 %}
+                                            Overdue ({{ -days_to_harvest }} days)
+                                        {% else %}
+                                            {{ days_to_harvest }} days
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+
+                        <!-- Yield -->
+                        {% if crop.yield_amount %}
+                            <div class="flex justify-between">
+                                <span class="text-gray-700 font-medium">Yield:</span>
+                                <span class="text-gray-900">{{ crop.yield_amount }} {{ crop.yield_unit }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="border-t border-gray-200 pt-4 flex gap-2">
+                        <a href="{{ url_for('crop.view_crop', crop_id=crop.id) }}" class="btn-secondary flex-1 text-center">
+                            <i class="fas fa-eye mr-2"></i>View
+                        </a>
+                        <a href="{{ url_for('crop.edit_crop', crop_id=crop.id) }}" class="btn-secondary flex-1 text-center">
+                            <i class="fas fa-edit mr-2"></i>Edit
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <i class="fas fa-seedling text-6xl text-gray-300 mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-600 mb-2">No Crops Yet</h3>
+            <p class="text-gray-500 mb-6">Start tracking your crops by adding your first one.</p>
+            <a href="{{ url_for('crop.create_crop') }}" class="btn-primary">
+                <i class="fas fa-plus mr-2"></i>Add Your First Crop
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+// Auto-submit search on text change with debounce
+let searchTimeout;
+let searchInput = document.getElementById('search');
+
+function autoSubmitSearch(form) {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        // Save cursor position before submit
+        const cursorPos = searchInput.selectionStart;
+        sessionStorage.setItem('searchCursorPos', cursorPos);
+        form.submit();
+    }, 300);
+}
+
+// Restore focus and cursor position after page load
+document.addEventListener('DOMContentLoaded', function() {
+    searchInput = document.getElementById('search');
+    if (searchInput) {
+        // Always auto-focus on search input when page loads
+        searchInput.focus();
+        
+        if (searchInput.value) {
+            // Restore cursor position if there's content
+            const cursorPos = sessionStorage.getItem('searchCursorPos');
+            if (cursorPos !== null) {
+                searchInput.setSelectionRange(cursorPos, cursorPos);
+                sessionStorage.removeItem('searchCursorPos');
+            } else {
+                // If no saved position, put cursor at the end
+                searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+            }
+        }
+    }
+});
+
+// Keyboard shortcut: Ctrl+K to focus search
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        document.getElementById('search').focus();
+        document.getElementById('search').select();
+    }
+});
+</script>
+
+<style>
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .badge-success {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+
+    .badge-warning {
+        background-color: #fef3c7;
+        color: #78350f;
+    }
+
+    .badge-danger {
+        background-color: #fee2e2;
+        color: #7f1d1d;
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem;
+        background-color: #f9fafb;
+        border-radius: 0.5rem;
+        border: 2px dashed #e5e7eb;
+    }
+</style>
+{% endblock %}
+

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}
+Add Crop - AgriSearch
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Register New Crop</h1>
+        <p class="text-gray-600">Track a new crop from planting to harvest</p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="max-w-2xl mx-auto">
+        <form method="POST" class="card p-6 md:p-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Farm Selection -->
+                <div class="md:col-span-2">
+                    <label for="farm_id" class="form-label">Farm</label>
+                    <select id="farm_id" name="farm_id" class="form-input" required>
+                        <option value="">Select a farm</option>
+                        {% for farm in farms %}
+                            <option value="{{ farm.id }}">{{ farm.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Crop Type -->
+                <div>
+                    <label for="crop_type" class="form-label">Crop Type</label>
+                    <input type="text" id="crop_type" name="crop_type" 
+                           class="form-input" placeholder="e.g., Rice, Corn, Cabbage" required>
+                    <small class="text-gray-500">Enter the type of crop</small>
+                </div>
+
+                <!-- Planting Date -->
+                <div>
+                    <label for="planting_date" class="form-label">Planting Date</label>
+                    <input type="date" id="planting_date" name="planting_date" 
+                           class="form-input" required>
+                </div>
+
+                <!-- Expected Harvest Date -->
+                <div>
+                    <label for="expected_harvest_date" class="form-label">Expected Harvest Date</label>
+                    <input type="date" id="expected_harvest_date" name="expected_harvest_date" 
+                           class="form-input">
+                    <small class="text-gray-500">Optional - helps track growing time</small>
+                </div>
+
+                <!-- Growth Stage -->
+                <div>
+                    <label for="current_growth_stage" class="form-label">Current Growth Stage</label>
+                    <select id="current_growth_stage" name="current_growth_stage" class="form-input">
+                        <option value="seedling">Seedling</option>
+                        <option value="vegetative" selected>Vegetative</option>
+                        <option value="flowering">Flowering</option>
+                        <option value="fruiting">Fruiting</option>
+                        <option value="mature">Mature</option>
+                    </select>
+                </div>
+
+                <!-- Notes -->
+                <div class="md:col-span-2">
+                    <label for="notes" class="form-label">Notes</label>
+                    <textarea id="notes" name="notes" rows="4" class="form-input" 
+                              placeholder="Add any additional notes about this crop..."></textarea>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex gap-3 mt-8">
+                <button type="submit" class="btn-primary flex-1">
+                    <i class="fas fa-check mr-2"></i>Register Crop
+                </button>
+                <a href="{{ url_for('crop.list_crops') }}" class="btn-secondary flex-1 text-center">
+                    <i class="fas fa-times mr-2"></i>Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Information Panel -->
+    <div class="max-w-2xl mx-auto mt-8">
+        <div class="card bg-blue-50 border border-blue-200 p-6">
+            <h3 class="text-lg font-semibold text-blue-900 mb-4">
+                <i class="fas fa-lightbulb mr-2"></i>Tips for Recording Crops
+            </h3>
+            <ul class="space-y-2 text-blue-800">
+                <li><strong>Farm:</strong> Select the farm where this crop is being grown</li>
+                <li><strong>Crop Type:</strong> Enter the specific crop name (e.g., Philippine Rice, Sweet Corn)</li>
+                <li><strong>Dates:</strong> Record planting date and expected harvest date for tracking</li>
+                <li><strong>Growth Stage:</strong> Update the growth stage as your crop develops</li>
+                <li><strong>Notes:</strong> Record variety, yield expectations, or special conditions</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.875rem;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+</style>
+{% endblock %}
+

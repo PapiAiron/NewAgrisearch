@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Municipal Offers - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">
+            <i class="fas fa-store text-green-600 mr-3"></i>Municipal Offers
+        </h1>
+        <p class="text-gray-600">Create and manage supply offers pushed to farmers</p>
+    </div>
+
+    <!-- Create New Offer -->
+    <div class="card p-6 mb-8">
+        <h2 class="text-xl font-bold text-gray-900 mb-4"><i class="fas fa-plus mr-2 text-green-600"></i>Create New Offer</h2>
+        <form method="POST" action="{{ url_for('distribution.admin_create_offer') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Offer Name *</label>
+                <input type="text" name="name" class="form-input w-full" placeholder="e.g., Rice Seedlings — March Batch" required>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Supply Name *</label>
+                <input type="text" name="supply_name" class="form-input w-full" placeholder="e.g., NSIC Rc222 Rice Seeds" required>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Supply Type *</label>
+                <select name="supply_type" class="form-input w-full" required>
+                    <option value="">Select...</option>
+                    {% for key, val in supply_types.items() %}
+                    <option value="{{ key }}">{{ val }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Total Quantity *</label>
+                <input type="number" name="total_quantity" class="form-input w-full" step="0.01" min="0" required>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Per-Farmer Quantity *</label>
+                <input type="number" name="quantity_per_farmer" class="form-input w-full" step="0.01" min="0" required>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Unit *</label>
+                <select name="unit" class="form-input w-full" required>
+                    <option value="">Select...</option>
+                    <option value="kg">Kilograms (kg)</option>
+                    <option value="bags">Bags</option>
+                    <option value="liters">Liters</option>
+                    <option value="boxes">Boxes</option>
+                    <option value="pieces">Pieces</option>
+                    <option value="packets">Packets</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Pickup Location *</label>
+                <input type="text" name="claim_location" class="form-input w-full" placeholder="e.g., Municipal Hall Gymnasium" required>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Claim Start</label>
+                <input type="date" name="claim_start" class="form-input w-full">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Claim Deadline *</label>
+                <input type="date" name="claim_deadline" class="form-input w-full" required>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Target Barangay</label>
+                <select name="target_barangay" class="form-input w-full">
+                    <option value="">All Barangays</option>
+                    {% for b in barangays %}
+                    <option value="{{ b }}">{{ b }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="md:col-span-2">
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Notes</label>
+                <textarea name="notes" class="form-input w-full" rows="2" placeholder="Additional instructions for farmers..."></textarea>
+            </div>
+            <div class="lg:col-span-3 flex justify-end">
+                <button type="submit" class="btn-primary px-6 py-2">
+                    <i class="fas fa-plus mr-2"></i>Create Offer (Draft)
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Offers List -->
+    {% if offers %}
+    <div class="space-y-4">
+        {% for offer in offers %}
+        <div class="card p-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-2">
+                        <h3 class="text-lg font-bold text-gray-900">{{ offer.name }}</h3>
+                        {% if offer.status == 'draft' %}
+                        <span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-semibold">Draft</span>
+                        {% elif offer.status == 'open' %}
+                        <span class="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs font-semibold">
+                            <i class="fas fa-circle mr-1" style="font-size:8px"></i>Open
+                        </span>
+                        {% else %}
+                        <span class="bg-red-100 text-red-800 px-2 py-0.5 rounded text-xs font-semibold">Closed</span>
+                        {% endif %}
+                    </div>
+                    <div class="text-sm text-gray-600 grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <span><i class="fas fa-box mr-1"></i>{{ offer.supply_name }}</span>
+                        <span><i class="fas fa-weight mr-1"></i>{{ offer.quantity_per_farmer }} {{ offer.unit }} / farmer</span>
+                        <span><i class="fas fa-map-marker-alt mr-1"></i>{{ offer.claim_location }}</span>
+                        <span><i class="fas fa-calendar mr-1"></i>By {{ offer.claim_deadline.strftime('%b %d, %Y') }}</span>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-1">
+                        Registered: <strong>{{ offer.registered_count() }}</strong> farmer(s) &nbsp;|&nbsp;
+                        Target: <strong>{{ offer.target_barangay or 'All Barangays' }}</strong>
+                    </p>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <a href="{{ url_for('distribution.admin_offer_claims', offer_id=offer.id) }}"
+                       class="btn-outline px-4 py-2 text-sm">
+                        <i class="fas fa-list mr-1"></i>View Claims
+                    </a>
+                    {% if offer.status == 'draft' %}
+                    <form method="POST" action="{{ url_for('distribution.admin_open_offer', offer_id=offer.id) }}" style="display:inline">
+                        <button type="submit" class="btn-primary px-4 py-2 text-sm">
+                            <i class="fas fa-bullhorn mr-1"></i>Open to Farmers
+                        </button>
+                    </form>
+                    {% elif offer.status == 'open' %}
+                    <form method="POST" action="{{ url_for('distribution.admin_close_offer', offer_id=offer.id) }}" style="display:inline">
+                        <button type="submit" class="btn-danger px-4 py-2 text-sm"
+                                onclick="return confirm('Close this offer?')">
+                            <i class="fas fa-times mr-1"></i>Close
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card p-12 text-center">
+        <div class="text-6xl text-gray-300 mb-4"><i class="fas fa-store-slash"></i></div>
+        <h3 class="text-xl font-semibold text-gray-700 mb-2">No Offers Yet</h3>
+        <p class="text-gray-600">Create your first municipal supply offer above.</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.form-input { width:100%; padding:0.5rem 0.75rem; border:1px solid #d1d5db; border-radius:0.5rem; font-size:0.875rem; }
+.form-input:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 2px rgba(59,130,246,0.3); }
+.btn-primary { background:#15803d; color:#fff; padding:0.5rem 1rem; border-radius:0.5rem; font-weight:600; border:none; cursor:pointer; display:inline-flex; align-items:center; transition:background 0.2s; }
+.btn-primary:hover { background:#166534; }
+.btn-danger { background:#dc2626; color:#fff; padding:0.5rem 1rem; border-radius:0.5rem; font-weight:600; border:none; cursor:pointer; display:inline-flex; align-items:center; transition:background 0.2s; }
+.btn-danger:hover { background:#b91c1c; }
+.btn-outline { border:1px solid #d1d5db; color:#374151; padding:0.5rem 1rem; border-radius:0.5rem; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; transition:all 0.2s; }
+.btn-outline:hover { background:#f3f4f6; }
+</style>
+{% endblock %}

@@ -1,0 +1,630 @@
+================================================================
+AGRISEARCH — SYSTEM DOCUMENTATION
+Farm Management System | Victoria, Laguna, Philippines
+================================================================
+Date: March 5, 2026
+
+
+================================================================
+SECTION 1: SYSTEM OVERVIEW
+================================================================
+
+AgriSearch is a web-based farm management system built using
+Flask (Python) for the municipality of Victoria, Laguna. It
+manages farms, livestock, crops, health records, supply
+distribution, and provides an AI-powered agricultural chatbot.
+
+The system supports four user roles:
+  - farmer          : Farm owners; manage their own farms
+  - barangay_officer: Barangay-level staff; manage their district
+  - victoria_admin  : Municipal administrator; full oversight
+  - system_admin    : Technical administrator; system configuration
+
+The 9 barangays of Victoria covered by the system:
+  Banca-Banca, Daniw, Masapang, Nanhaya, Pagalangan,
+  San Benito, San Felix, San Francisco, San Roque
+
+
+================================================================
+SECTION 2: MAJOR FUNCTIONALITIES
+================================================================
+
+-------------------------------------------------------------
+1. AUTHENTICATION & USER MANAGEMENT  (app/routes/auth.py)
+-------------------------------------------------------------
+The authentication system controls all access to the platform.
+
+  Login
+    - Users log in with username or email + password
+    - Passwords are hashed using Werkzeug's password hashing
+    - Sessions are permanent (configured via PERMANENT_SESSION_LIFETIME)
+    - Records the user's last login timestamp on each successful login
+
+  Registration
+    - New users register as farmers by default
+    - Validates: email format, password length (min 8 chars),
+      unique username, unique email, valid barangay selection
+    - Accounts are active immediately but flagged as unverified
+
+  Forgot / Reset Password
+    - User submits their email address
+    - A time-limited reset token is generated and stored (PasswordReset model)
+    - Reset URL is generated (in production this would be emailed)
+    - Token is validated on the reset page; password is updated on success
+
+  Logout
+    - Clears the entire session (user_id, username, role, full_name)
+
+  Access Control
+    - `login_required` decorator on every protected route
+    - Role-based guards inside each route to prevent unauthorized access
+
+-------------------------------------------------------------
+2. ROLE-BASED DASHBOARD  (app/routes/dashboard.py)
+-------------------------------------------------------------
+The dashboard landing page routes each user to their own
+role-specific view with relevant statistics and quick links.
+
+  Farmer Dashboard
+    - Counts of own farms, total land area, average farm size
+    - Livestock count broken down by animal type
+    - Upcoming vaccine due dates (within 7 days)
+    - Expired / expiring-soon vaccine inventory counts
+    - Unresolved health alerts and critical alert count
+    - Quick links to manage farms, livestock, crops, supplies
+
+  Barangay Officer Dashboard
+    - Overview of all farms in the officer's barangay
+    - Livestock summary across the entire barangay
+    - Pending supply requests waiting for officer review
+    - Health alerts across all farms in the barangay
+
+  Victoria Admin Dashboard
+    - System-wide farm, livestock, and user counts
+    - Yellow alert banner when supply requests need approval
+    - Pending approvals count badge
+    - Links to distribution management, user management,
+      and system-wide health oversight
+
+  System Admin Dashboard
+    - Technical administration panel
+    - User management, database management, system settings
+    - Full access to all data across all barangays
+
+-------------------------------------------------------------
+3. FARM MANAGEMENT  (app/routes/farm.py)
+-------------------------------------------------------------
+Manages the registration and tracking of farms.
+
+  Farm List (paginated, 20 per page)
+    - Farmers see only their own farms
+    - Officers see only farms in their barangay
+    - Admins see all farms system-wide
+    - Searchable by farm name or description
+    - Filterable by barangay, crop type, or animal type
+
+  Create Farm
+    - Fields: name, description, area, crop type, barangay
+    - GPS coordinate picker using Leaflet map (click to pin)
+    - Supports multiple barangays (stored in barangay_name field)
+    - Validates coordinates are within Victoria bounds
+
+  Edit Farm
+    - Same form as create; pre-populated with existing data
+    - Soft-delete option: marks farm as inactive instead of deleting
+
+  Farm Detail
+    - Shows all farm information, crops, livestock summary
+    - Embedded Leaflet map showing farm location
+    - Toggle between Street Map and Satellite views
+
+  Farm Map View (Interactive)  ← route: /farm/map
+    - Full-screen interactive map of all Victoria farms
+    - Color-coded pins per barangay (9 distinct colors)
+    - Barangay boundary overlays (GeoJSON polygons)
+    - Heatmap overlay showing farm density
+    - Satellite / street map toggle
+    - Radius circle drawing tool for proximity searches
+    - Side panel showing farm details on marker click
+    - Counts of mapped vs unmapped farms
+
+  Farmer List
+    - Admins/officers can view a directory of registered farmers
+    - Filterable by barangay
+
+  API Endpoints (internal, JSON):
+    GET /farm/api/farms-geojson          → all farms as GeoJSON
+    GET /farm/api/barangay-boundaries    → Victoria barangay polygons
+
+-------------------------------------------------------------
+4. LIVESTOCK MANAGEMENT  (app/routes/livestock.py)
+-------------------------------------------------------------
+Tracks all animals on each farm with full health and
+productivity records.
+
+  Animal Types supported:
+    Cattle, Pig, Goat, Chicken, Duck, Turkey, Carabao, Rabbit,
+    Fish, Other
+
+  Livestock List (paginated, 15 per page)
+    - Filterable by animal type, status, farm
+    - Shows count, status, farm name, and tags per animal
+
+  Create / Edit Livestock
+    - Fields: animal type, unique ID/tag, count, status,
+      breed, birthdate, weight, notes
+    - Linked to a specific farm; access-controlled by role
+
+  Livestock Detail
+    - Full profile: animal info, health history, weight log,
+      nutrition records, productivity records
+    - Timeline of all events (vaccinations, treatments, etc.)
+
+  Health Records (per animal)
+    - Types: vaccine, vitamin, medication, checkup,
+      treatment, deworming
+    - Records: date administered, next due date, administered by,
+      dosage, notes, linked vaccine inventory item
+
+  Productivity Records
+    - Types: eggs laid, milk produced, weight gain,
+      offspring, meat produced, wool produced
+    - Date, quantity, unit, and notes
+
+  Weight Log
+    - Tracks weight over time for growth monitoring
+
+  Livestock Events
+    - Logs events like birth, sale, death, transfer
+
+  API Endpoints (internal, JSON):
+    GET /livestock/api/active?farm_id=X  → active animals on a farm
+    GET /livestock/api/vaccines?farm_id=X → available vaccines for a farm
+
+-------------------------------------------------------------
+5. CROP MANAGEMENT  (app/routes/crop.py)
+-------------------------------------------------------------
+Tracks crops planted on each farm across growing seasons.
+
+  Crop List
+    - Filterable by crop type, season, status
+    - Role-based visibility (farmer → own farms, officer → barangay)
+
+  Create / Edit Crop
+    - Fields: crop type, variety, planting date, expected harvest,
+      actual harvest, area planted, yield amount, status, notes
+    - Linked to a specific farm
+
+  Crop Detail
+    - Full crop profile with growth stage timeline
+    - Growth records (date, stage, observations, interventions)
+
+  Crop Growth Records
+    - Log growth stages: germination, vegetative, flowering,
+      fruiting, harvest
+    - Attach observations and interventions per stage
+
+-------------------------------------------------------------
+6. HEALTH MANAGEMENT  (app/routes/health.py)
+-------------------------------------------------------------
+Monitors vaccine inventory, disease records, and health alerts
+across all farms and livestock.
+
+  Vaccine Inventory
+    - Tracks vaccines stored at each farm
+    - Fields: vaccine name, code, manufacturer, batch number,
+      quantity units, quantity used, unit type, purchase date,
+      expiry date, storage requirements, cost
+    - Computed properties: quantity_remaining, is_expired,
+      expiry_status (fresh / expiring_soon / expired)
+    - Add / edit / deactivate vaccines per farm
+    - Grouped view by farm showing available vaccines
+    - Per-animal vaccination tracking (which animals received which vaccine)
+
+  Disease Records
+    - Logs disease outbreaks per livestock
+    - Fields: disease name, affected count, diagnosis date,
+      treatment given, outcome, notes
+
+  Health Alerts
+    - System-generated or manually created alerts per animal
+    - Priority levels: low, medium, high, critical
+    - Resolved / unresolved tracking
+    - Shown on dashboards when unresolved
+
+  Disease Reference List
+    - Browse common livestock diseases with descriptions
+    - Philippine-specific animal health context
+
+-------------------------------------------------------------
+7. SUPPLY MANAGEMENT  (app/routes/supply.py)
+-------------------------------------------------------------
+Tracks agricultural supply inventory centrally and per farm.
+
+  Central Inventory
+    - Master list of all supplies (seeds, fertilizers, feed,
+      medicines, equipment, etc.)
+    - Current stock levels, unit types, last updated date
+    - Add / edit supply items
+
+  Farm Supply Inventory
+    - Tracks supply quantities held at each individual farm
+    - Derived from distributions received
+
+  Supply Usage Records
+    - Records how and when supplies were used on a farm
+    - Fields: supply item, livestock linked, quantity used,
+      usage date, usage type, notes
+
+  Supply History per Farm
+    - Full timeline of supplies received and used per farm
+
+-------------------------------------------------------------
+8. SUPPLY DISTRIBUTION SYSTEM  (app/routes/distribution.py)
+-------------------------------------------------------------
+Manages the full flow of supplies from municipal stock to
+farms, with a multi-step approval workflow.
+
+  STATUS FLOW:
+    pending → officer_approved → approved → allocated → distributed → fulfilled
+
+  Step 1 — Farmer Submits Request  (status: pending)
+    - Farmer fills out a supply request form
+    - Specifies supply needed, quantity, reason, urgency
+
+  Step 2 — Barangay Officer Reviews  (status: officer_approved / rejected)
+    - Officers see all pending requests from their barangay
+    - Can approve (recommend) or reject with a reason
+    - Approved requests move to officer_approved status
+
+  Step 3 — Victoria Admin Approves  (status: approved / rejected)
+    - Admin sees all officer-recommended requests
+    - Can give final approval or reject with notes
+    - Approved requests become available for allocation
+
+  Step 4 — Admin Allocates to Distribution Event  (status: allocated)
+    - Admin creates Distribution Events (cycles with a date/name)
+    - Allocates approved requests to an event
+    - A DistributionRecord is created linking request to event
+
+  Step 5 — Officer Marks as Distributed  (status: distributed)
+    - Officer physically hands over supplies to the farmer
+    - Marks the distribution record as distributed
+    - A unique verification code is generated
+
+  Step 6 — Farmer Verifies Receipt  (status: fulfilled)
+    - Farmer enters the verification code to confirm receipt
+    - Distribution record is marked fulfilled
+
+  Other views:
+    - Farmer: My Requests, Received Supplies
+    - Admin: Distribution Cycles dashboard with event management
+    - Admin: View cycle details, summary stats (allocated, distributed, fulfilled)
+
+  API Endpoint:
+    GET /distribution/api/requests/pending  → count of pending approvals
+                                              (used for sidebar badge)
+
+-------------------------------------------------------------
+9. AGRIBOT AI CHATBOT  (app/routes/chatbot.py)
+-------------------------------------------------------------
+An AI-powered agricultural assistant embedded in all pages.
+
+  How it works:
+    - Floating chat bubble on every page for logged-in users
+    - User sends messages; the chatbot responds with farming advice
+    - Conversation history is saved per user in the database
+    - Context window: last 12 messages are sent to the AI model
+
+  AI Model:
+    - Provider: Groq Cloud
+    - Model: llama-3.3-70b-versatile (Meta LLaMA 3.3, 70B)
+
+  System Prompt Restrictions:
+    - Only answers agriculture-related questions
+    - Topics: crops, livestock, soil, tools, Philippine farming,
+      Victoria Laguna context, PAGASA seasons, DA guidelines
+    - Politely declines non-agriculture questions
+    - Formats responses with bullet points and short paragraphs
+
+  Conversation Management:
+    - Conversations are stored in ChatConversation table
+    - Each message stored in ChatMessage table (role: user/assistant)
+    - First message auto-titles the conversation
+    - Multiple conversations per user supported
+
+  API Endpoints:
+    POST /chatbot/message              → send message, get reply
+    GET  /chatbot/conversations        → list all conversations
+    GET  /chatbot/history/<conv_id>    → message history of a conversation
+    POST /chatbot/new                  → start a new conversation
+    DELETE /chatbot/conversations/<id> → delete a conversation
+
+
+================================================================
+SECTION 3: MINOR FUNCTIONALITIES
+================================================================
+
+  User Profile Page
+    - View and update full name, email, phone number, barangay
+    - Change password (requires current password confirmation)
+
+  Flash Notifications
+    - Auto-dismissing success/warning/error banners (5 second timeout)
+    - Appear at the top of every page after form submissions
+
+  Sidebar Navigation
+    - Role-based navigation links: each role sees only relevant sections
+    - Active section highlighting based on current URL
+    - Collapsible sidebar on mobile (hamburger menu)
+    - Sidebar state remembered via sidebar.js
+
+  Pagination
+    - Farm list: 20 per page
+    - Livestock list: 15 per page
+    - "Page X of Y" indicator with Previous / Next controls
+    - Preserves search/filter parameters across pages
+
+  Search & Filtering
+    - Farms: search by name/description, filter by barangay,
+      crop type, animal type
+    - Livestock: filter by animal type, status, farm
+    - Officers: filter farm list by barangay
+
+  Barangay Boundary Map
+    - GeoJSON boundaries for Victoria's 9 barangays
+    - Sourced from OpenStreetMap if available, else approximate
+    - Cached in memory after first load for performance
+
+  Approval Badge Counter
+    - Sidebar shows a red badge with pending approval count
+    - Updates dynamically via JS fetch on page load
+    - Only visible to victoria_admin users
+
+  Session Security
+    - Permanent sessions with configurable lifetime
+    - Session refreshed on every authenticated request
+    - User object injected via context processor for templates
+
+  Error Handling
+    - Global 404 and 500 error handlers
+    - DB session rollback on 500 errors
+    - User-facing flash messages for all error conditions
+
+  Logging
+    - Verbose DEBUG-level logging throughout all routes
+    - Named loggers per module (e.g., [LOGIN], [LIST_FARMS])
+    - Logs user IDs, roles, and operation results
+
+
+================================================================
+SECTION 4: REQUIREMENTS.TXT — ALL PACKAGES EXPLAINED
+================================================================
+
+----------------------------------------------------------------
+Flask>=2.3.0
+----------------------------------------------------------------
+  WHAT IT IS: The core web framework the entire application is
+  built on. Flask handles HTTP routing, request/response
+  processing, template rendering (via Jinja2), session
+  management, and blueprint organization.
+
+  HOW WE USE IT:
+    - Every route (auth, dashboard, farm, etc.) is a Flask Blueprint
+    - Jinja2 templating (bundled with Flask) powers all HTML pages
+    - Flask session object stores logged-in user information
+    - url_for(), flash(), redirect(), render_template() are all Flask
+    - App factory pattern: create_app() in app/__init__.py
+
+  INSTALL: pip install Flask
+
+----------------------------------------------------------------
+Flask-SQLAlchemy>=3.0.0
+----------------------------------------------------------------
+  WHAT IT IS: A Flask extension that integrates SQLAlchemy (the
+  Python ORM) with Flask's application context. It simplifies
+  database setup and query syntax within Flask apps.
+
+  HOW WE USE IT:
+    - db = SQLAlchemy() is initialized once in app/__init__.py
+    - All models (User, Farm, Livestock, etc.) extend db.Model
+    - Provides db.session for add/commit/rollback operations
+    - db.relationship() defines links between models
+
+  INSTALL: pip install Flask-SQLAlchemy
+
+----------------------------------------------------------------
+SQLAlchemy>=2.0.0
+----------------------------------------------------------------
+  WHAT IT IS: The underlying Python SQL toolkit and ORM
+  (Object-Relational Mapper). Translates Python class
+  definitions into SQL tables and Python method calls into
+  SQL queries.
+
+  HOW WE USE IT:
+    - Model definitions: columns, types (String, Integer, DateTime, etc.)
+    - Querying: Model.query.filter_by(), db.session.query()
+    - Relationships: db.relationship() with back_populates
+    - Aggregates: func.count(), func.sum() for dashboard stats
+    - Pagination: query.paginate(page, per_page)
+
+  INSTALL: pip install SQLAlchemy (installed with Flask-SQLAlchemy)
+
+----------------------------------------------------------------
+mysql-connector-python>=8.0.0
+----------------------------------------------------------------
+  WHAT IT IS: The official MySQL database driver for Python.
+  Allows SQLAlchemy to communicate with a MySQL server.
+
+  HOW WE USE IT:
+    - The DATABASE_URL in config.py uses the mysql+mysqlconnector
+      connection string format
+    - Example: mysql+mysqlconnector://user:pass@localhost/agrisearch
+    - All database reads/writes go through this driver
+
+  INSTALL: pip install mysql-connector-python
+
+----------------------------------------------------------------
+python-dotenv>=1.0.0
+----------------------------------------------------------------
+  WHAT IT IS: Loads environment variables from a .env file
+  into the application's runtime environment (os.environ).
+
+  HOW WE USE IT:
+    - .env file stores sensitive values: DB credentials, secret key,
+      GROQ_API_KEY, Flask environment
+    - config.py calls load_dotenv() on startup
+    - Values accessed via os.getenv('VARIABLE_NAME')
+    - Keeps secrets out of source code
+
+  .env file variables used:
+      SECRET_KEY          - Flask session encryption key
+      DATABASE_URL        - Full MySQL connection string
+      GROQ_API_KEY        - Groq AI API key
+      FLASK_ENV           - development / production
+      FLASK_DEBUG         - 1 or 0
+
+  INSTALL: pip install python-dotenv
+
+----------------------------------------------------------------
+Werkzeug>=2.3.0
+----------------------------------------------------------------
+  WHAT IT IS: The WSGI utility library that Flask is built upon.
+  Provides low-level HTTP handling, security utilities,
+  and development server tools.
+
+  HOW WE USE IT:
+    - Password hashing: uses Werkzeug's generate_password_hash()
+      and check_password_hash() in the User model
+    - user.set_password(password) → stores a bcrypt hash
+    - user.check_password(password) → verifies on login
+    - Also provides the development server and debugger
+
+  INSTALL: pip install Werkzeug (installed automatically with Flask)
+
+----------------------------------------------------------------
+pyopenssl>=23.0.0
+----------------------------------------------------------------
+  WHAT IT IS: Python bindings for the OpenSSL library, enabling
+  SSL/TLS cryptographic operations in Python applications.
+
+  HOW WE USE IT:
+    - Required to enable ssl_context='adhoc' in run.py
+    - This allows the development server to run over HTTPS
+      with a self-signed certificate
+    - Useful during development when testing secure features
+
+  INSTALL: pip install pyopenssl
+
+----------------------------------------------------------------
+cryptography>=41.0.0
+----------------------------------------------------------------
+  WHAT IT IS: A comprehensive Python cryptography library.
+  Provides cryptographic recipes and primitives.
+
+  HOW WE USE IT:
+    - Required dependency for pyopenssl to function
+    - pyopenssl uses the cryptography package internally
+      to generate self-signed SSL certificates
+    - Also available for any future cryptographic needs
+      (e.g., generating secure tokens)
+
+  INSTALL: pip install cryptography
+
+----------------------------------------------------------------
+groq>=0.4.0
+----------------------------------------------------------------
+  WHAT IT IS: The official Python SDK (client library) for the
+  Groq Cloud API, which provides fast LLM inference.
+
+  HOW WE USE IT:
+    - Powers the AgriBot chatbot feature
+    - Initialized in chatbot.py: Groq(api_key=os.getenv('GROQ_API_KEY'))
+    - Calls the LLaMA 3.3 70B model via:
+        client.chat.completions.create(
+            model='llama-3.3-70b-versatile',
+            messages=[...],
+            max_tokens=600,
+            temperature=0.7,
+        )
+    - Returns streamed or full text completions used as chatbot replies
+
+  INSTALL: pip install groq
+
+----------------------------------------------------------------
+shapely>=2.0.0
+----------------------------------------------------------------
+  WHAT IT IS: A Python library for manipulation and analysis
+  of geometric objects (points, lines, polygons). Built on top
+  of the GEOS geometry engine.
+
+  HOW WE USE IT:
+    - Used in barangay boundary generation scripts
+    - Creates and manipulates GeoJSON polygon geometries for
+      Victoria Laguna's 9 barangays
+    - Generates the approximate boundary polygons when real
+      OpenStreetMap data is unavailable
+    - The generated GeoJSON is saved to:
+        app/static/victoria_barangays.json
+    - Used by the Leaflet farm map to draw barangay overlays
+
+  INSTALL: pip install shapely
+
+----------------------------------------------------------------
+FRONTEND LIBRARIES (CDN — not in requirements.txt)
+----------------------------------------------------------------
+
+  Leaflet 1.9.4  (https://leafletjs.com)
+    - Interactive map library used in farm pages
+    - Loaded via unpkg.com CDN, no installation needed
+    - Used in: farm/map.html, farm/create.html, farm/detail.html
+
+  Leaflet.heat 0.2.0
+    - Heatmap plugin for Leaflet
+    - Loaded via unpkg.com CDN
+    - Used in: farm/map.html for farm density visualization
+
+  Tailwind CSS  (https://tailwindcss.com)
+    - Utility-first CSS framework for all UI styling
+    - Loaded via CDN in base.html
+    - Used across all templates for layout, colors, spacing
+
+  Font Awesome  (https://fontawesome.com)
+    - Icon library used for sidebar icons, buttons, indicators
+    - Loaded via CDN in base.html
+
+
+================================================================
+SECTION 5: DATABASE MODELS SUMMARY
+================================================================
+
+  User               - Login credentials, role, barangay, profile
+  PasswordReset      - Timed tokens for password reset flow
+  Farm               - Farm records with GPS coordinates
+  Livestock          - Individual animals or animal groups per farm
+  NutritionRecord    - Feed and nutrition logs per animal
+  HealthRecord       - Vaccine/treatment/checkup records per animal
+  ProductivityRecord - Egg/milk/weight/offspring tracking
+  LivestockEvent     - Birth, sale, death, transfer events
+  LivestockWeightLog - Weight-over-time tracking
+  VaccineInventory   - Vaccine stock held at each farm
+  DiseaseRecord      - Disease diagnosis and treatment records
+  HealthAlert        - Priority alerts for animal health issues
+  Crop               - Crop plantings per farm per season
+  CropGrowthRecord   - Growth stage observations per crop
+  Supply             - Master supply catalog items
+  SupplyInventory    - Central stock levels per supply item
+  SupplyDistribution - Records of supply handoffs to farms
+  SupplyUsageRecord  - How supplies were used on each farm
+  FarmSupplyInventory- Supply quantities held at each farm
+  FarmSupplyUsage    - Supply usage logs at farm level
+  DistributionRequest- Farmer supply requests with approval status
+  DistributionEvent  - Distribution cycle/event grouping allocations
+  DistributionRecord - Individual allocation+distribution records
+  ChatConversation   - AgriBot conversation sessions per user
+  ChatMessage        - Individual messages (user/assistant) per convo
+
+
+================================================================
+END OF DOCUMENT
+================================================================

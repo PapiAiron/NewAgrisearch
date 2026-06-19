@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Approve Supply Orders - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <a href="{{ url_for('distribution.list_cycles') }}" class="text-blue-600 hover:text-blue-700 mb-4 inline-block text-sm">
+            <i class="fas fa-arrow-left mr-1"></i> Back to Distribution Cycles
+        </a>
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">
+            <i class="fas fa-check-double text-green-600 mr-3"></i>Approve Supply Orders
+        </h1>
+        <p class="text-gray-600">Review officer-recommended orders and give final approval before allocation</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="card p-6">
+            <p class="text-sm text-gray-600 font-semibold">Awaiting Your Approval</p>
+            <p class="text-3xl font-bold text-yellow-600 mt-2">{{ requests|length }}</p>
+        </div>
+        <div class="card p-6">
+            <p class="text-sm text-gray-600 font-semibold">Your Role</p>
+            <p class="text-lg font-bold text-green-600 mt-2">Victoria Admin</p>
+        </div>
+        <div class="card p-6">
+            <p class="text-sm text-gray-600 font-semibold">Next Step After Approval</p>
+            <p class="text-sm font-medium text-gray-700 mt-2">Allocate to a distribution event</p>
+        </div>
+    </div>
+
+    {% if requests %}
+    <div class="space-y-6">
+        {% for req in requests %}
+        <div class="card p-6 border-l-4 border-l-blue-500">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
+                <!-- Farm & Farmer -->
+                <div>
+                    <p class="text-xs text-gray-500 font-semibold uppercase mb-1">Farm</p>
+                    <h3 class="text-lg font-bold text-gray-900">{{ req.farm.name }}</h3>
+                    <p class="text-sm text-gray-600 mt-1">
+                        <i class="fas fa-map-marker-alt mr-1 text-green-500"></i>{{ req.farm.barangay_name }}
+                    </p>
+                    <p class="text-sm text-gray-600">
+                        <i class="fas fa-user mr-1"></i>{{ req.farm.owner.full_name }}
+                    </p>
+                </div>
+
+                <!-- Supply -->
+                <div>
+                    <p class="text-xs text-gray-500 font-semibold uppercase mb-1">Supply Requested</p>
+                    <h3 class="text-lg font-bold text-gray-900">{{ req.supply_name }}</h3>
+                    <span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-semibold mt-1">
+                        {{ supply_types.get(req.supply_type, req.supply_type) }}
+                    </span>
+                </div>
+
+                <!-- Quantity & Dates -->
+                <div>
+                    <p class="text-xs text-gray-500 font-semibold uppercase mb-1">Quantity</p>
+                    <p class="text-2xl font-bold text-green-600">{{ req.quantity_requested }} <span class="text-sm font-normal text-gray-600">{{ req.unit }}</span></p>
+                    <p class="text-xs text-gray-500 mt-2">
+                        <i class="fas fa-calendar-alt mr-1"></i>Requested: {{ req.requested_at.strftime('%b %d, %Y') }}
+                    </p>
+                    {% if req.officer_review_date %}
+                    <p class="text-xs text-gray-500">
+                        <i class="fas fa-user-check mr-1"></i>Officer reviewed: {{ req.officer_review_date.strftime('%b %d, %Y') }}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if req.reason %}
+            <div class="bg-gray-50 rounded p-3 mb-4">
+                <p class="text-xs text-gray-500 font-semibold uppercase mb-1">Farmer's Reason</p>
+                <p class="text-sm text-gray-700">{{ req.reason }}</p>
+            </div>
+            {% endif %}
+
+            {% if req.officer_notes %}
+            <div class="bg-blue-50 border border-blue-200 rounded p-3 mb-4">
+                <p class="text-xs text-blue-600 font-semibold uppercase mb-1">
+                    <i class="fas fa-thumbs-up mr-1"></i>Officer Recommendation
+                </p>
+                <p class="text-sm text-blue-800">{{ req.officer_notes }}</p>
+                {% if req.reviewed_by_officer_id %}
+                <p class="text-xs text-blue-500 mt-1">— {{ req.reviewed_by_officer.full_name }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Approval Form -->
+            <form method="POST" action="{{ url_for('distribution.admin_decide_request', req_id=req.id) }}" class="space-y-3 border-t border-gray-100 pt-4">
+                <div>
+                    <label for="admin_notes_{{ req.id }}" class="block text-sm font-semibold text-gray-700 mb-1">
+                        Admin Notes <span class="text-gray-400 font-normal">(optional)</span>
+                    </label>
+                    <textarea id="admin_notes_{{ req.id }}" name="admin_notes" rows="2"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                              placeholder="Add notes for this decision..."></textarea>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <button type="submit" name="action" value="approve"
+                            class="inline-flex items-center gap-2 px-5 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
+                        <i class="fas fa-check-circle"></i> Approve &amp; Queue for Allocation
+                    </button>
+                    <button type="submit" name="action" value="reject"
+                            class="inline-flex items-center gap-2 px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition text-sm">
+                        <i class="fas fa-times-circle"></i> Reject
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card p-16 text-center">
+        <div class="text-6xl text-gray-300 mb-4"><i class="fas fa-check-double"></i></div>
+        <h3 class="text-xl font-semibold text-gray-700 mb-2">No Pending Approvals</h3>
+        <p class="text-gray-600 mb-6">All officer-recommended orders have been reviewed.</p>
+        <a href="{{ url_for('distribution.list_cycles') }}" class="btn-primary inline-flex items-center gap-2">
+            <i class="fas fa-calendar-alt"></i> Go to Distribution Events
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

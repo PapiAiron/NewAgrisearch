@@ -1,0 +1,408 @@
+{% extends "base.html" %}
+
+{% block title %}Create Farm - AgriSearch{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+<style>
+  #farm-map { height:300px; border-radius:8px; border:1.5px solid #d1d5db; }
+  #farm-map.picking { cursor:crosshair; }
+  .coord-display { font-family:monospace; font-size:12px; color:#374151; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <a href="{{ url_for('farm.list_farms') }}" class="text-green-600 hover:text-green-700 mb-4 inline-block">
+            <i class="fas fa-arrow-left"></i> Back to Farms
+        </a>
+        <h1 class="text-4xl font-bold text-gray-800">🌱 Add New Farm</h1>
+        <p class="text-gray-600 mt-2">Register your agricultural land and crops</p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card p-8">
+        <form method="POST" action="{{ url_for('farm.create_farm') }}" class="space-y-6">
+            
+            <!-- Farm Name -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-tag text-green-600"></i> Farm Name *
+                </label>
+                <input type="text" name="name" required class="form-input w-full" 
+                       placeholder="e.g., My Rice Farm, Orchard A">
+            </div>
+
+            <!-- Crop Type -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-leaf text-green-600"></i> Crop Type *
+                </label>
+                <input type="text" name="crop_type" required class="form-input w-full"
+                       placeholder="e.g., Rice, Corn, Mango, Calamansi">
+            </div>
+
+            <!-- Area -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-ruler text-green-600"></i> Area (Square Meters) *
+                </label>
+                  <input type="number" id="areaInput" name="area_square_meters" required step="0.01" min="1" 
+                      class="form-input w-full" placeholder="e.g., 25000">
+                  <p class="text-xs text-gray-500 mt-1" id="areaHint">Enter the area in square meters (m²)</p>
+            </div>
+
+            <!-- Barangay -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-map-marker-alt text-green-600"></i> Barangay *
+                </label>
+                <select name="barangay_name" required class="form-input w-full">
+                    <option value="">-- Select Barangay --</option>
+                    {% for bid, bname in victoria_barangays.items() %}
+                    <option value="{{ bname }}" {% if bname == user.barangay_name %}selected{% endif %}>{{ bname }}</option>
+                    {% endfor %}
+                </select>
+                <p class="text-xs text-gray-500 mt-1">Select the barangay where this farm is located</p>
+            </div>
+
+            <!-- Coordinates — Map Picker -->
+            <div class="border-t pt-6">
+                <div class="flex items-center justify-between mb-3">
+                    <p class="text-sm font-semibold text-gray-700">
+                        <i class="fas fa-map-pin text-blue-600"></i> Pin Farm Location <span class="text-gray-400 font-normal">(Optional)</span>
+                    </p>
+                    <button type="button" id="clearLocBtn" onclick="clearLocation()"
+                        class="hidden text-xs text-red-600 hover:text-red-700 font-semibold">
+                        <i class="fas fa-times mr-1"></i>Clear
+                    </button>
+                </div>
+
+                <!-- Coordinate display -->
+                <div id="coordDisplay" class="hidden mb-2 flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                    <i class="fas fa-map-marker-alt text-green-600"></i>
+                    <span class="coord-display" id="coordText">–</span>
+                    <span class="ml-auto text-xs text-green-600 font-semibold">Location set ✓</span>
+                </div>
+                <div id="noCoordHint" class="mb-2 text-xs text-gray-400"><i class="fas fa-hand-pointer mr-1"></i>Click on the map to pin your farm's location</div>
+
+                <!-- Map -->
+                <div id="farm-map"></div>
+
+                <div class="mt-2 flex gap-2">
+                    <button type="button" id="streetBtn"
+                        class="flex-1 text-xs flex items-center justify-center gap-2 border border-green-300 bg-green-50 text-green-700 font-semibold py-2 rounded-lg transition">
+                        <i class="fas fa-map"></i> Street Map
+                    </button>
+                    <button type="button" id="satBtn"
+                        class="flex-1 text-xs flex items-center justify-center gap-2 border border-gray-300 text-gray-600 hover:bg-gray-50 font-semibold py-2 rounded-lg transition">
+                        <i class="fas fa-satellite"></i> Satellite
+                    </button>
+                </div>
+
+                <!-- GPS button below map -->
+                <button type="button" onclick="useMyLocation()"
+                    id="gpsBtn"
+                    class="mt-2 w-full text-xs flex items-center justify-center gap-2 border border-blue-300 text-blue-600 hover:bg-blue-50 font-semibold py-2 rounded-lg transition">
+                    <i class="fas fa-location-arrow"></i> Use My Current Location (GPS)
+                </button>
+                <input type="hidden" name="latitude"  id="latInput">
+                <input type="hidden" name="longitude" id="lngInput">
+                <input type="hidden" name="lot_boundary_geojson" id="lotBoundaryInput">
+
+                <div class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div class="flex items-center justify-between gap-3">
+                        <p class="text-sm font-semibold text-blue-800">
+                            <i class="fas fa-draw-polygon mr-1"></i> Lot Boundary (Recommended)
+                        </p>
+                        <button type="button" id="clearBoundaryBtn" onclick="clearBoundary()"
+                            class="hidden text-xs text-red-600 hover:text-red-700 font-semibold">
+                            <i class="fas fa-eraser mr-1"></i>Clear Boundary
+                        </button>
+                    </div>
+                    <p class="text-xs text-blue-700 mt-1">
+                        Use the polygon tool on the map to draw your lot outline. We automatically use its center as fallback location.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-align-left text-green-600"></i> Description (Optional)
+                </label>
+                <textarea name="description" rows="4" class="form-input w-full"
+                          placeholder="Add details about your farm, farming practices, irrigation methods, etc."></textarea>
+            </div>
+
+            <!-- Buttons -->
+            <div class="border-t pt-6 flex gap-4">
+                <a href="{{ url_for('farm.list_farms') }}" class="btn-secondary flex-1">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+                <button type="submit" class="btn-primary flex-1">
+                    <i class="fas fa-save"></i> Create Farm
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Info Box -->
+    <div class="mt-8 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+        <p class="text-sm text-blue-800">
+            <i class="fas fa-info-circle"></i> 
+            <strong>Tip:</strong> Click anywhere on the map to pin your farm's exact location. You can always update it later.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<script>
+const VICTORIA_BOUNDS = [[14.1824, 121.2974],[14.2650, 121.3718]];
+const VICTORIA_CENTER = [14.2270, 121.3281];
+
+const map = L.map('farm-map').fitBounds(VICTORIA_BOUNDS, {padding:[10,10]});
+
+const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/">OpenStreetMap</a>', maxZoom:19
+});
+
+const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '© Esri World Imagery',
+    maxZoom: 19
+});
+
+let satelliteOn = false;
+streetLayer.addTo(map);
+
+function updateMapButtons() {
+    const streetBtn = document.getElementById('streetBtn');
+    const satBtn = document.getElementById('satBtn');
+    if (satelliteOn) {
+        satBtn.className = 'flex-1 text-xs flex items-center justify-center gap-2 border border-blue-300 bg-blue-50 text-blue-700 font-semibold py-2 rounded-lg transition';
+        streetBtn.className = 'flex-1 text-xs flex items-center justify-center gap-2 border border-gray-300 text-gray-600 hover:bg-gray-50 font-semibold py-2 rounded-lg transition';
+    } else {
+        streetBtn.className = 'flex-1 text-xs flex items-center justify-center gap-2 border border-green-300 bg-green-50 text-green-700 font-semibold py-2 rounded-lg transition';
+        satBtn.className = 'flex-1 text-xs flex items-center justify-center gap-2 border border-gray-300 text-gray-600 hover:bg-gray-50 font-semibold py-2 rounded-lg transition';
+    }
+}
+
+document.getElementById('streetBtn').addEventListener('click', function () {
+    if (!satelliteOn) return;
+    map.removeLayer(satelliteLayer);
+    streetLayer.addTo(map);
+    satelliteOn = false;
+    updateMapButtons();
+});
+
+document.getElementById('satBtn').addEventListener('click', function () {
+    if (satelliteOn) return;
+    map.removeLayer(streetLayer);
+    satelliteLayer.addTo(map);
+    satelliteOn = true;
+    updateMapButtons();
+});
+
+const pinIcon = L.divIcon({
+    className:'',
+    html:`<div style="width:18px;height:18px;background:#10b981;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)"></div>`,
+    iconSize:[18,18], iconAnchor:[9,18]
+});
+
+let marker = null;
+let boundaryLayer = null;
+const drawnItems = new L.FeatureGroup();
+const areaInput = document.getElementById('areaInput');
+const areaHint = document.getElementById('areaHint');
+map.addLayer(drawnItems);
+
+map.getContainer().classList.add('picking');
+
+const drawControl = new L.Control.Draw({
+    position: 'topright',
+    draw: {
+        polygon: {
+            allowIntersection: false,
+            showArea: true,
+            shapeOptions: { color: '#2563eb', weight: 2.5, fillOpacity: 0.12 }
+        },
+        polyline: false,
+        rectangle: false,
+        circle: false,
+        marker: false,
+        circlemarker: false
+    },
+    edit: {
+        featureGroup: drawnItems,
+        edit: true,
+        remove: true
+    }
+});
+map.addControl(drawControl);
+
+map.on('click', function(e) {
+    placeMarker(e.latlng.lat, e.latlng.lng);
+});
+
+function placeMarker(lat, lng) {
+    if (marker) map.removeLayer(marker);
+    marker = L.marker([lat, lng], {icon: pinIcon, draggable: true}).addTo(map);
+    marker.on('dragend', function(e) {
+        const p = e.target.getLatLng();
+        setCoords(p.lat, p.lng);
+    });
+    setCoords(lat, lng);
+}
+
+function setCoords(lat, lng) {
+    const latR = Math.round(lat * 100000)/100000;
+    const lngR = Math.round(lng * 100000)/100000;
+    document.getElementById('latInput').value = latR;
+    document.getElementById('lngInput').value = lngR;
+    document.getElementById('coordText').textContent = `${latR}, ${lngR}`;
+    document.getElementById('coordDisplay').classList.remove('hidden');
+    document.getElementById('noCoordHint').classList.add('hidden');
+    document.getElementById('clearLocBtn').classList.remove('hidden');
+}
+
+function clearLocation() {
+    if (marker) { map.removeLayer(marker); marker = null; }
+    document.getElementById('latInput').value  = '';
+    document.getElementById('lngInput').value  = '';
+    document.getElementById('coordDisplay').classList.add('hidden');
+    document.getElementById('noCoordHint').classList.remove('hidden');
+    document.getElementById('clearLocBtn').classList.add('hidden');
+}
+
+function setBoundary(geometry) {
+    document.getElementById('lotBoundaryInput').value = JSON.stringify(geometry);
+    document.getElementById('clearBoundaryBtn').classList.remove('hidden');
+}
+
+function areaSqmFromGeometry(geometry) {
+    if (!geometry || !L.GeometryUtil) {
+        return 0;
+    }
+
+    const ringArea = (ring) => {
+        const latLngs = ring.map(c => L.latLng(c[1], c[0]));
+        return Math.abs(L.GeometryUtil.geodesicArea(latLngs));
+    };
+
+    if (geometry.type === 'Polygon') {
+        let total = ringArea(geometry.coordinates[0] || []);
+        for (let i = 1; i < geometry.coordinates.length; i++) {
+            total -= ringArea(geometry.coordinates[i] || []);
+        }
+        return Math.max(0, total);
+    }
+
+    if (geometry.type === 'MultiPolygon') {
+        let total = 0;
+        for (const poly of geometry.coordinates || []) {
+            if (!poly || !poly.length) continue;
+            let polyArea = ringArea(poly[0] || []);
+            for (let i = 1; i < poly.length; i++) {
+                polyArea -= ringArea(poly[i] || []);
+            }
+            total += Math.max(0, polyArea);
+        }
+        return Math.max(0, total);
+    }
+
+    return 0;
+}
+
+function syncAreaFromBoundary(geometry) {
+    const sqm = areaSqmFromGeometry(geometry);
+    if (sqm > 0) {
+        const rounded = Math.round(sqm * 100) / 100;
+        areaInput.value = rounded;
+        areaHint.textContent = `Auto-calculated from boundary: ${rounded.toLocaleString()} m²`;
+    }
+}
+
+function clearBoundary() {
+    if (boundaryLayer) {
+        drawnItems.removeLayer(boundaryLayer);
+        boundaryLayer = null;
+    }
+    document.getElementById('lotBoundaryInput').value = '';
+    document.getElementById('clearBoundaryBtn').classList.add('hidden');
+    areaHint.textContent = 'Enter the area in square meters (m²)';
+}
+
+function boundaryCenterFromLayer(layer) {
+    const center = layer.getBounds().getCenter();
+    return [center.lat, center.lng];
+}
+
+map.on(L.Draw.Event.CREATED, function (e) {
+    if (boundaryLayer) {
+        drawnItems.removeLayer(boundaryLayer);
+    }
+    boundaryLayer = e.layer;
+    drawnItems.addLayer(boundaryLayer);
+
+    const geo = boundaryLayer.toGeoJSON().geometry;
+    setBoundary(geo);
+    syncAreaFromBoundary(geo);
+
+    const [cLat, cLng] = boundaryCenterFromLayer(boundaryLayer);
+    if (!document.getElementById('latInput').value || !document.getElementById('lngInput').value) {
+        placeMarker(cLat, cLng);
+    }
+});
+
+map.on(L.Draw.Event.EDITED, function () {
+    if (!boundaryLayer) {
+        return;
+    }
+    const geo = boundaryLayer.toGeoJSON().geometry;
+    setBoundary(geo);
+    syncAreaFromBoundary(geo);
+});
+
+map.on(L.Draw.Event.DELETED, function () {
+    boundaryLayer = null;
+    clearBoundary();
+});
+
+function useMyLocation() {
+    if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser.');
+        return;
+    }
+    const btn = document.getElementById('gpsBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting location…';
+    navigator.geolocation.getCurrentPosition(
+        function(pos) {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            placeMarker(lat, lng);
+            map.setView([lat, lng], 17);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-location-arrow"></i> Use My Current Location (GPS)';
+        },
+        function(err) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-location-arrow"></i> Use My Current Location (GPS)';
+            const msgs = {
+                1: 'Location access denied.\n\nIf you are on mobile, make sure you are using https:// in the address bar, then allow location when prompted.',
+                2: 'Location unavailable. Check your GPS signal and try again.',
+                3: 'Location request timed out. Please try again.'
+            };
+            alert(msgs[err.code] || 'Could not get your location. Make sure the URL uses https://');
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+    );
+}
+</script>
+{% endblock %}

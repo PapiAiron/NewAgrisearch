@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}My Claims - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-4xl font-bold text-gray-900 mb-2">
+                    <i class="fas fa-ticket-alt text-blue-600 mr-3"></i>My Offer Claims
+                </h1>
+                <p class="text-gray-600">Your registered municipal offer claims and claim codes</p>
+            </div>
+            <a href="{{ url_for('distribution.available_offers') }}" class="btn-primary inline-flex items-center gap-2">
+                <i class="fas fa-store"></i> Browse Offers
+            </a>
+        </div>
+    </div>
+
+    {% if claims %}
+    <div class="space-y-6">
+        {% for claim in claims %}
+        <div class="card p-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Offer Info -->
+                <div class="md:col-span-2">
+                    <h3 class="text-xl font-bold text-gray-900 mb-1">{{ claim.offer.name }}</h3>
+                    <p class="text-gray-700 mb-3">
+                        {{ claim.offer.supply_name }} &mdash;
+                        <span class="font-semibold">{{ claim.quantity_reserved }} {{ claim.offer.unit }}</span>
+                    </p>
+                    <div class="grid grid-cols-2 gap-3 text-sm text-gray-700">
+                        <div><span class="font-semibold">Farm:</span> {{ claim.farm.name }}</div>
+                        <div><span class="font-semibold">Pickup At:</span> {{ claim.offer.claim_location }}</div>
+                        <div><span class="font-semibold">Deadline:</span> {{ claim.offer.claim_deadline.strftime('%b %d, %Y') }}</div>
+                        <div><span class="font-semibold">Registered:</span> {{ claim.registered_at.strftime('%b %d, %Y %H:%M') }}</div>
+                    </div>
+                </div>
+
+                <!-- Claim Code + Status -->
+                <div class="flex flex-col items-center justify-center bg-gray-50 rounded-xl p-4">
+                    {% if claim.status == 'registered' %}
+                        <p class="text-xs text-gray-500 font-semibold uppercase mb-2">Your Claim Code</p>
+                        <div class="text-3xl font-bold text-green-700 tracking-widest font-mono mb-2">
+                            {{ claim.claim_code }}
+                        </div>
+                        <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold">
+                            <i class="fas fa-clock mr-1"></i>Pending Pickup
+                        </span>
+                        <p class="text-xs text-gray-500 mt-2 text-center">Present this code at the municipal hall</p>
+                    {% elif claim.status == 'claimed' %}
+                        <p class="text-xs text-gray-500 font-semibold uppercase mb-2">Claimed</p>
+                        <div class="text-3xl font-bold text-gray-400 tracking-widest font-mono mb-2">
+                            {{ claim.claim_code }}
+                        </div>
+                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">
+                            <i class="fas fa-check-circle mr-1"></i>Claimed on {{ claim.claimed_at.strftime('%b %d, %Y') }}
+                        </span>
+                    {% elif claim.status == 'no_show' %}
+                        <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-semibold">
+                            <i class="fas fa-times-circle mr-1"></i>No Show
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card p-12 text-center">
+        <div class="text-6xl text-gray-300 mb-4"><i class="fas fa-ticket-alt"></i></div>
+        <h3 class="text-xl font-semibold text-gray-700 mb-2">No Claims Yet</h3>
+        <p class="text-gray-600 mb-6">You haven't registered for any municipal offers yet</p>
+        <a href="{{ url_for('distribution.available_offers') }}" class="btn-primary inline-flex items-center gap-2">
+            <i class="fas fa-store"></i> Browse Available Offers
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.btn-primary { background:#15803d; color:#fff; padding:0.625rem 1.25rem; border-radius:0.5rem; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:0.5rem; transition:background 0.2s; }
+.btn-primary:hover { background:#166534; }
+</style>
+{% endblock %}

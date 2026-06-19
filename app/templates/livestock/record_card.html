@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animal Record — {{ livestock.unique_id or 'ID-' ~ livestock.id }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; font-size: 12px; color: #1a1a1a; background: #fff; }
+
+        .page { max-width: 800px; margin: 0 auto; padding: 24px; }
+
+        /* Header */
+        .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #15803d; padding-bottom: 14px; margin-bottom: 18px; }
+        .header-left h1 { font-size: 20px; font-weight: bold; color: #15803d; }
+        .header-left p { font-size: 11px; color: #6b7280; margin-top: 2px; }
+        .header-right { text-align: right; font-size: 11px; color: #6b7280; }
+        .header-right .cert-no { font-size: 14px; font-weight: bold; color: #374151; }
+
+        /* Readiness badge */
+        .ready-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: bold; margin-top: 6px; }
+        .ready-yes { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .ready-no  { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
+
+        /* Section headings */
+        .section { margin-bottom: 16px; }
+        .section-title { font-size: 12px; font-weight: bold; color: #fff; background: #15803d; padding: 4px 10px; border-radius: 4px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .section-alt .section-title { background: #1d4ed8; }
+        .section-warn .section-title { background: #b45309; }
+
+        /* Info grid */
+        .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px 12px; }
+        .info-item label { font-size: 10px; color: #6b7280; text-transform: uppercase; display: block; }
+        .info-item span  { font-weight: 600; color: #111; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        th { background: #f3f4f6; text-align: left; padding: 5px 8px; font-size: 10px; text-transform: uppercase; color: #374151; border: 1px solid #e5e7eb; }
+        td { padding: 5px 8px; border: 1px solid #e5e7eb; vertical-align: top; }
+        tr:nth-child(even) td { background: #f9fafb; }
+
+        .empty { color: #9ca3af; font-style: italic; padding: 10px 0; text-align: center; }
+
+        /* Footer */
+        .footer { margin-top: 24px; border-top: 1px solid #e5e7eb; padding-top: 12px; display: flex; justify-content: space-between; font-size: 10px; color: #9ca3af; }
+        .signature-box { border-top: 1px solid #6b7280; width: 180px; margin-top: 36px; text-align: center; font-size: 10px; color: #374151; padding-top: 4px; }
+
+        @media print {
+            body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .no-print { display: none !important; }
+            .page { padding: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="no-print" style="background:#f0fdf4;border:1px solid #86efac;padding:10px 16px;font-family:Arial,sans-serif;font-size:13px;display:flex;justify-content:space-between;align-items:center;">
+    <span>🖨️ <strong>Animal Record Card</strong> — Ready to print or share</span>
+    <button onclick="window.print()" style="background:#15803d;color:#fff;border:none;padding:6px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:bold;">Print / Save as PDF</button>
+</div>
+
+<div class="page">
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <h1>🌾 AgriSearch — Animal Record Card</h1>
+            <p>Municipality of Victoria, Laguna</p>
+            {% if livestock.is_ready_for_sale %}
+            <span class="ready-badge ready-yes">✅ Ready for Sale</span>
+            {% else %}
+            <span class="ready-badge ready-no">⏳ Not Yet Market-Ready</span>
+            {% endif %}
+        </div>
+        <div class="header-right">
+            <div class="cert-no">{{ livestock.unique_id or ('REC-' ~ livestock.id) }}</div>
+            <div>{{ livestock.animal_type|upper }}</div>
+            <div style="margin-top:4px">Printed: {{ now.strftime('%B %d, %Y') }}</div>
+        </div>
+    </div>
+
+    <!-- Animal Information -->
+    <div class="section">
+        <div class="section-title">Animal Information</div>
+        <div class="info-grid">
+            <div class="info-item"><label>Animal Type</label><span>{{ livestock.animal_type|title }}</span></div>
+            <div class="info-item"><label>Breed</label><span>{{ livestock.breed or '—' }}</span></div>
+            <div class="info-item"><label>Tag / ID Number</label><span>{{ livestock.unique_id or '—' }}</span></div>
+            <div class="info-item"><label>Gender</label><span>{{ livestock.gender|title if livestock.gender else '—' }}</span></div>
+            <div class="info-item"><label>Head Count</label><span>{{ livestock.count }}</span></div>
+            <div class="info-item"><label>Age</label><span>{{ livestock.get_age_display() }}</span></div>
+            <div class="info-item"><label>Current Weight</label><span>{{ livestock.weight_kg ~ ' kg' if livestock.weight_kg else '—' }}</span></div>
+            <div class="info-item"><label>Status</label><span>{{ livestock.status|title }}</span></div>
+            <div class="info-item"><label>Farm</label><span>{{ livestock.farm.name }}</span></div>
+            <div class="info-item"><label>Barangay</label><span>{{ livestock.farm.barangay_name }}</span></div>
+            <div class="info-item"><label>Owner</label><span>{{ livestock.farm.owner.full_name if livestock.farm.owner else '—' }}</span></div>
+            <div class="info-item"><label>Acquisition Date</label><span>{{ livestock.acquisition_date.strftime('%b %d, %Y') if livestock.acquisition_date else '—' }}</span></div>
+            <div class="info-item"><label>Source</label><span>{{ livestock.source or '—' }}</span></div>
+            <div class="info-item"><label>Location</label><span>{{ livestock.location_description or '—' }}</span></div>
+        </div>
+        {% if livestock.notes %}
+        <div style="margin-top:8px;padding:6px 10px;background:#f9fafb;border-radius:4px;font-size:11px;">
+            <strong>Notes:</strong> {{ livestock.notes }}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Health & Vaccine Records -->
+    <div class="section section-alt">
+        <div class="section-title">Health & Vaccine Records</div>
+        {% if health %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Name / Treatment</th>
+                    <th>Dosage</th>
+                    <th>Next Due</th>
+                    <th>Veterinarian</th>
+                    <th>Cost</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for h in health %}
+                <tr>
+                    <td>{{ h.date_administered.strftime('%b %d, %Y') }}</td>
+                    <td>{{ h.record_type|title }}</td>
+                    <td><strong>{{ h.name }}</strong>{% if h.description %}<br><span style="color:#6b7280">{{ h.description }}</span>{% endif %}</td>
+                    <td>{{ h.dosage or '—' }}</td>
+                    <td>{{ h.next_due_date.strftime('%b %d, %Y') if h.next_due_date else '—' }}</td>
+                    <td>{{ h.veterinarian_name or '—' }}</td>
+                    <td>{{ '₱%.2f'|format(h.cost) if h.cost else '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty">No health records on file.</p>
+        {% endif %}
+    </div>
+
+    <!-- Weight History -->
+    <div class="section">
+        <div class="section-title">Weight History</div>
+        {% if weight_logs %}
+        <table>
+            <thead><tr><th>Date</th><th>Weight (kg)</th><th>Notes</th></tr></thead>
+            <tbody>
+                {% for wl in weight_logs %}
+                <tr>
+                    <td>{{ wl.weighed_at.strftime('%b %d, %Y') }}</td>
+                    <td><strong>{{ wl.weight_kg }} kg</strong></td>
+                    <td>{{ wl.notes or '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty">No weight logs on file.</p>
+        {% endif %}
+    </div>
+
+    <!-- Event History (Death / Sale) -->
+    {% if events %}
+    <div class="section section-warn">
+        <div class="section-title">Event History (Deaths / Sales)</div>
+        <table>
+            <thead><tr><th>Date</th><th>Event</th><th>Count</th><th>Details</th></tr></thead>
+            <tbody>
+                {% for ev in events %}
+                <tr>
+                    <td>{{ ev.event_date.strftime('%b %d, %Y') }}</td>
+                    <td>{{ ev.event_type|title }}</td>
+                    <td>{{ ev.count_affected }}</td>
+                    <td>
+                        {% if ev.event_type == 'death' %}Cause: {{ ev.cause_of_death|title if ev.cause_of_death else '—' }}
+                        {% elif ev.event_type == 'sale' %}
+                            {% if ev.buyer_name %}Buyer: {{ ev.buyer_name }}{% endif %}
+                            {% if ev.price_per_head %} · ₱{{ '%.2f'|format(ev.price_per_head) }}/head{% endif %}
+                            {% if ev.total_revenue %} · Total: ₱{{ '%.2f'|format(ev.total_revenue) }}{% endif %}
+                        {% endif %}
+                        {% if ev.notes %}<br><em>{{ ev.notes }}</em>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Signature Area -->
+    <div style="margin-top:28px;display:flex;justify-content:space-between;align-items:flex-end;">
+        <div>
+            <div class="signature-box">Farm Owner / Issuer</div>
+        </div>
+        <div style="text-align:right;font-size:10px;color:#9ca3af;">
+            <p>Generated by AgriSearch System</p>
+            <p>{{ now.strftime('%B %d, %Y at %I:%M %p') }}</p>
+            <p style="margin-top:4px;color:#d1d5db;">This record is for informational purposes only.</p>
+        </div>
+    </div>
+
+</div><!-- /page -->
+</body>
+</html>

@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AgriSearch{% endblock %} - Victoria, Laguna</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='agrisearch_logo.png') }}">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <style>
+        :root {
+            --primary-color: #10b981;
+            --primary-dark: #059669;
+            --primary-light: #d1fae5;
+            --secondary-color: #3b82f6;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --success-color: #10b981;
+            --gray-light: #f3f4f6;
+            --gray-darker: #1f2937;
+        }
+        
+        * {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            background-color: #f9fafb;
+            color: var(--gray-darker);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 0.625rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background-color: #e5e7eb;
+            color: var(--gray-darker);
+            padding: 0.625rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #d1d5db;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background-color: white;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+        
+        .form-input::placeholder {
+            color: #9ca3af;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-1rem);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .alert-success {
+            background-color: #d1fae5;
+            border: 1px solid var(--success-color);
+            color: #065f46;
+        }
+        
+        .alert-error {
+            background-color: #fee2e2;
+            border: 1px solid var(--danger-color);
+            color: #7f1d1d;
+        }
+        
+        .alert-warning {
+            background-color: #fef3c7;
+            border: 1px solid var(--warning-color);
+            color: #78350f;
+        }
+        
+        .alert-info {
+            background-color: #dbeafe;
+            border: 1px solid var(--secondary-color);
+            color: #1e3a8a;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            padding: 1.5rem;
+        }
+        
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .navbar {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .brand-logo-img {
+            width: 2rem;
+            height: 2rem;
+            object-fit: contain;
+            flex-shrink: 0;
+        }
+
+        .sidebar-logo-img {
+            width: 2rem;
+            height: 2rem;
+            object-fit: contain;
+            flex-shrink: 0;
+        }
+        
+        .text-gradient {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        @media (max-width: 640px) {
+            .form-input {
+                font-size: 16px;
+            }
+        }
+
+        /* ——— Danger Button ——— */
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            padding: 0.625rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+        .btn-danger:active {
+            transform: translateY(0);
+        }
+
+        /* ——— Form Label ——— */
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        /* ——— Status Badges ——— */
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.625rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .badge-warning {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .badge-info {
+            background-color: #dbeafe;
+            color: #1e3a8a;
+        }
+        .badge-danger {
+            background-color: #fee2e2;
+            color: #7f1d1d;
+        }
+        .badge-gray {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% if 'user_id' in session %}
+    <!-- Sidebar Backdrop (Mobile) -->
+    <div id="sidebarBackdrop" class="fixed inset-0 bg-black/50 z-30"></div>
+    
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 z-40 overflow-y-auto">
+        <!-- Sidebar Header -->
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center gap-3">
+                <img src="{{ url_for('static', filename='agrisearch_logo.png') }}" alt="AgriSearch Logo" class="sidebar-logo-img">
+                <h1 class="text-xl font-bold text-gray-900">AgriSearch</h1>
+            </div>
+        </div>
+        
+        <!-- Navigation Sections -->
+        <nav class="space-y-1 p-4">
+            <!-- Home Section -->
+            <div data-nav-section="home" class="mb-6">
+                <p class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Home</p>
+                <div class="space-y-1">
+                    <a href="{{ url_for('dashboard.index') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-chart-line w-5"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="{{ url_for('dashboard.profile') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-user w-5"></i>
+                        <span>Profile</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Operations Section -->
+            <div data-nav-section="operations" class="mb-6">
+                <p class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Operations</p>
+                <div class="space-y-1">
+                    <a href="{{ url_for('farm.list_farms') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-leaf w-5"></i>
+                        <span>Farms</span>
+                    </a>
+                    <a href="{{ url_for('farm.farm_map') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-map-marked-alt w-5"></i>
+                        <span>Farm Map</span>
+                    </a>
+                    <a href="{{ url_for('livestock.list_livestock') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-cow w-5"></i>
+                        <span>Livestock</span>
+                    </a>
+                    <a href="{{ url_for('crop.list_crops') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-seedling w-5"></i>
+                        <span>Crops</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Health Section -->
+            <div data-nav-section="health" class="mb-6">
+                <p class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Health</p>
+                <div class="space-y-1">
+                    <a href="{{ url_for('health.list_vaccines') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-syringe w-5"></i>
+                        <span>Vaccines</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Supplies Section (Staff Only) -->
+            {% if user.role in ['victoria_admin', 'system_admin'] %}
+            <div data-nav-section="supplies" class="mb-6">
+                <p class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Supplies</p>
+                <div class="space-y-1">
+                    <a href="{{ url_for('supply.inventory_view') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-boxes w-5"></i>
+                        <span>Inventory</span>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Supplies Section (Farmers Only) -->
+            {% if user.role == 'farmer' %}
+            <div data-nav-section="supplies" class="mb-6">
+                <p class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Supplies</p>
+                <div class="space-y-1">
+                    <a href="{{ url_for('supply.inventory_view') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-boxes w-5"></i>
+                        <span>My Inventory</span>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Distribution Section (Staff & Farmers) -->
+            {% if user.role in ['farmer', 'victoria_admin', 'system_admin'] %}
+            <div data-nav-section="distribution" class="mb-6">
+                <p class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Distribution</p>
+                <div class="space-y-1">
+                    {% if user.role == 'victoria_admin' %}
+                    <a href="{{ url_for('distribution.list_cycles') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-circle-notch w-5"></i>
+                        <span>Distribution Cycles</span>
+                    </a>
+                    <a href="{{ url_for('distribution.admin_direct_requests') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-inbox w-5 text-blue-600"></i>
+                        <span>Direct Orders</span>
+                        <span id="directRequestsBadge" class="ml-auto bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full hidden"></span>
+                    </a>
+                    <a href="{{ url_for('distribution.admin_offers') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-store w-5 text-purple-600"></i>
+                        <span>Municipal Offers</span>
+                    </a>
+                    {% elif user.role == 'farmer' %}
+                    <a href="{{ url_for('distribution.create_request') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-hand-paper w-5"></i>
+                        <span>Order Supplies</span>
+                    </a>
+                    <a href="{{ url_for('distribution.my_requests') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-list w-5"></i>
+                        <span>My Orders</span>
+                    </a>
+                    <a href="{{ url_for('distribution.available_offers') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-store w-5 text-green-600"></i>
+                        <span>Available Offers</span>
+                        <span id="offersBadge" class="ml-auto bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full hidden"></span>
+                    </a>
+                    <a href="{{ url_for('distribution.my_claims') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-ticket-alt w-5"></i>
+                        <span>My Claims</span>
+                    </a>
+                    <a href="{{ url_for('distribution.received_supplies') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-inbox w-5"></i>
+                        <span>Received Supplies</span>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Admin Section (Conditional) -->
+            {% if user.role == 'victoria_admin' %}
+            <div data-nav-section="admin" class="mb-6">
+                <p class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Administration</p>
+                <div class="space-y-1">
+                    <a href="{{ url_for('dashboard.admin_users') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-users-cog w-5"></i>
+                        <span>Users</span>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if user.role == 'system_admin' %}
+            <div data-nav-section="admin" class="mb-6">
+                <p class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Administration</p>
+                <div class="space-y-1">
+                    <a href="/dashboard/admin/users-system" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-users-cog w-5"></i>
+                        <span>User Management</span>
+                    </a>
+                    <a href="/dashboard/admin/database" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-database w-5"></i>
+                        <span>Database</span>
+                    </a>
+                    <a href="/dashboard/admin/settings-system" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-cog w-5"></i>
+                        <span>System Settings</span>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </nav>
+    </aside>
+    {% endif %}
+    
+    <!-- Top Navigation Bar (Minimal) -->
+    <nav class="navbar{% if 'user_id' not in session %} auth-page{% endif %}">
+        <div class="px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex justify-between items-center">
+                <!-- Left: Hamburger + Logo (Mobile), Hamburger only (Desktop) -->
+                <div class="flex items-center gap-4">
+                    {% if 'user_id' in session %}
+                    <button id="sidebarToggle" class="text-gray-600 hover:text-green-600 text-xl transition">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    {% endif %}
+                    <div class="hidden md:flex items-center gap-2">
+                        <img src="{{ url_for('static', filename='agrisearch_logo.png') }}" alt="AgriSearch Logo" class="brand-logo-img">
+                        <a href="/" class="logo">AgriSearch</a>
+                    </div>
+                </div>
+                
+                <!-- Right: User Menu -->
+                {% if 'user_id' in session %}
+                <div class="flex items-center gap-4">
+                    <div class="hidden sm:flex items-center gap-2 text-gray-600">
+                        <i class="fas fa-user-circle text-lg"></i>
+                        <span class="text-sm font-medium">{{ session.full_name }}</span>
+                    </div>
+                    <button onclick="confirmLogout()" class="btn-secondary text-sm">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+                {% else %}
+                <div class="flex gap-2">
+                    <a href="{{ url_for('auth.login') }}" class="btn-secondary text-sm">Login</a>
+                    <a href="{{ url_for('auth.register') }}" class="btn-primary text-sm">Register</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content Wrapper -->
+    <main class="transition-all duration-300{% if 'user_id' not in session %} auth-page{% endif %}">
+    
+    <!-- Flash Messages -->
+    <div class="flash-messages max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="py-4">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <i class="fas fa-check-circle"></i>
+                            <span>{{ message }}</span>
+                            <button onclick="this.parentElement.style.display='none';" class="ml-auto text-lg">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+    
+    <!-- Main Content -->
+    {% block content %}{% endblock %}
+    
+    </main>
+    
+    <!-- Footer (hidden on dashboard, farm, livestock, health, crop, supply, and distribution routes) -->
+    {% if request.endpoint and not request.endpoint.startswith('dashboard') and not request.endpoint.startswith('farm') and not request.endpoint.startswith('livestock') and not request.endpoint.startswith('health') and not request.endpoint.startswith('crop') and not request.endpoint.startswith('supply') and not request.endpoint.startswith('distribution') %}
+    <footer class="bg-gray-900 text-white mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">AgriSearch</h3>
+                    <p class="text-gray-400">Digital masterlist and livestock information system for Victoria, Laguna.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                    <ul class="text-gray-400 space-y-2">
+                        <li><a href="{{ url_for('auth.login') }}" class="hover:text-white">Login</a></li>
+                        <li><a href="{{ url_for('auth.register') }}" class="hover:text-white">Register</a></li>
+                        <li><a href="{{ url_for('auth.forgot_password') }}" class="hover:text-white">Forgot Password</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Contact</h3>
+                    <p class="text-gray-400">Victoria, Laguna<br>Philippines</p>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 AgriSearch. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    {% endif %}
+    
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-2xl max-w-sm mx-4">
+            <div class="p-6">
+                <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                    <i class="fas fa-sign-out-alt text-red-600 text-xl"></i>
+                </div>
+                
+                <h3 class="text-lg font-semibold text-gray-900 text-center mb-2">
+                    Confirm Logout
+                </h3>
+                
+                <p class="text-gray-600 text-center mb-6">
+                    Are you sure you want to logout? You'll need to login again to access your account.
+                </p>
+                
+                <div class="flex gap-3">
+                    <button onclick="closeLogoutModal()" class="flex-1 px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium transition">
+                        <i class="fas fa-times mr-2"></i>Cancel
+                    </button>
+                    <button onclick="proceedLogout()" class="flex-1 px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <script>
+        // Auto-hide flash messages after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    alert.style.opacity = '0';
+                    alert.style.transition = 'opacity 0.3s ease';
+                    setTimeout(() => {
+                        alert.style.display = 'none';
+                    }, 300);
+                }, 5000);
+            });
+        });
+        
+        function confirmLogout() {
+            document.getElementById('logoutModal').classList.remove('hidden');
+        }
+        
+        function closeLogoutModal() {
+            document.getElementById('logoutModal').classList.add('hidden');
+        }
+        
+        function proceedLogout() {
+            window.location.href = '{{ url_for("auth.logout") }}';
+        }
+        
+        // Close modal if user clicks outside of it
+        document.getElementById('logoutModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeLogoutModal();
+            }
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+
+    {% if session.get('role') == 'victoria_admin' %}
+    <script>
+        function loadDirectRequestsBadge() {
+            fetch('/distribution/api/direct-requests/count')
+                .then(r => r.ok ? r.json() : null)
+                .then(data => {
+                    const badge = document.getElementById('directRequestsBadge');
+                    if (badge && data && data.count > 0) {
+                        badge.textContent = data.count;
+                        badge.classList.remove('hidden');
+                    }
+                })
+                .catch(() => {});
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDirectRequestsBadge();
+        });
+    </script>
+    {% endif %}
+
+    {% if session.get('role') == 'farmer' %}
+    <script>
+        function loadOffersBadge() {
+            fetch('/distribution/api/open-offers/count')
+                .then(r => r.ok ? r.json() : null)
+                .then(data => {
+                    const badge = document.getElementById('offersBadge');
+                    if (badge && data && data.count > 0) {
+                        badge.textContent = data.count;
+                        badge.classList.remove('hidden');
+                    }
+                })
+                .catch(() => {});
+        }
+        document.addEventListener('DOMContentLoaded', loadOffersBadge);
+    </script>
+    {% endif %}
+
+    <!-- ═══════════ AGRIBOT CHATBOT ═══════════ -->
+    {% if session.get('user_id') %}
+    <style>
+        /* ── Bubble ── */
+        #ab-bubble {
+            position:fixed; bottom:24px; right:24px; z-index:9999;
+            width:52px; height:52px; border-radius:50%;
+            background:linear-gradient(135deg,#16a34a,#059669);
+            box-shadow:0 4px 20px rgba(22,163,74,.5);
+            cursor:pointer; display:flex; align-items:center; justify-content:center;
+            transition:transform .2s,box-shadow .2s;
+        }
+        #ab-bubble:hover { transform:scale(1.1); box-shadow:0 6px 28px rgba(22,163,74,.6); }
+
+        /* ── Main window ── */
+        #ab-window {
+            position:fixed; bottom:88px; right:24px; z-index:9998;
+            width:740px; height:540px;
+            display:flex; flex-direction:row; overflow:hidden;
+            border-radius:16px; box-shadow:0 8px 40px rgba(0,0,0,.2);
+            transform:scale(0.95) translateY(12px); transform-origin:bottom right;
+            opacity:0; pointer-events:none;
+            transition:transform .22s cubic-bezier(.34,1.56,.64,1),opacity .18s;
+        }
+        #ab-window.open { transform:scale(1) translateY(0); opacity:1; pointer-events:all; }
+
+        /* ── Sidebar ── */
+        #ab-sidebar {
+            width:220px; min-width:220px; flex-shrink:0;
+            background:linear-gradient(180deg,#14532d,#166534);
+            display:flex; flex-direction:column; overflow:hidden;
+        }
+        #ab-sidebar-header {
+            padding:13px 12px; display:flex; align-items:center;
+            justify-content:space-between; flex-shrink:0;
+            border-bottom:1px solid rgba(255,255,255,.1);
+        }
+        #ab-new-btn {
+            background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.2);
+            border-radius:7px; color:#fff; cursor:pointer;
+            padding:5px 10px; font-size:11px; font-weight:600;
+            display:flex; align-items:center; gap:5px; transition:background .15s;
+        }
+        #ab-new-btn:hover { background:rgba(255,255,255,.28); }
+        #ab-conv-list { flex:1; overflow-y:auto; padding:6px; }
+        #ab-conv-list::-webkit-scrollbar { width:3px; }
+        #ab-conv-list::-webkit-scrollbar-thumb { background:rgba(255,255,255,.2); border-radius:2px; }
+        .ab-conv-item {
+            display:flex; align-items:center; gap:2px;
+            border-radius:8px; margin-bottom:3px; transition:background .15s;
+        }
+        .ab-conv-item:hover, .ab-conv-item.active { background:rgba(255,255,255,.13); }
+        .ab-conv-info {
+            flex:1; padding:7px 6px; min-width:0; cursor:pointer;
+            border-radius:6px 0 0 6px;
+        }
+        .ab-conv-name { font-size:12px; font-weight:600; color:#d1fae5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .ab-conv-time { font-size:10px; color:#6ee7b7; margin-top:2px; }
+        .ab-del-btn {
+            background:none; border:none; color:rgba(255,255,255,.25);
+            cursor:pointer; padding:6px 7px; border-radius:5px;
+            font-size:10px; flex-shrink:0; transition:color .15s;
+        }
+        .ab-del-btn:hover { color:#fca5a5; }
+
+        /* ── Main chat panel ── */
+        #ab-main { flex:1; display:flex; flex-direction:column; overflow:hidden; background:#fff; }
+        #ab-header {
+            background:linear-gradient(135deg,#16a34a,#059669);
+            padding:11px 14px; display:flex; align-items:center; gap:9px; flex-shrink:0;
+        }
+        #ab-mob-toggle {
+            background:none; border:none; color:rgba(255,255,255,.75);
+            cursor:pointer; font-size:14px; padding:3px 6px; display:none;
+        }
+        #ab-messages {
+            flex:1; overflow-y:auto; padding:14px 12px;
+            display:flex; flex-direction:column; gap:10px; scroll-behavior:smooth;
+        }
+        .ab-msg { max-width:82%; display:flex; gap:7px; align-items:flex-end; }
+        .ab-msg.bot  { align-self:flex-start; }
+        .ab-msg.user { align-self:flex-end; flex-direction:row-reverse; }
+        .ab-bubble {
+            padding:9px 13px; border-radius:14px;
+            font-size:13px; line-height:1.55; word-break:break-word;
+        }
+        .ab-msg.bot  .ab-bubble { background:#f0fdf4; color:#1e3a2a; border-bottom-left-radius:4px; }
+        .ab-msg.user .ab-bubble { background:#16a34a; color:#fff; border-bottom-right-radius:4px; }
+        .ab-avatar {
+            width:26px; height:26px; border-radius:50%; flex-shrink:0;
+            display:flex; align-items:center; justify-content:center;
+            font-size:13px; background:#dcfce7; color:#16a34a;
+        }
+        .ab-typing span {
+            display:inline-block; width:7px; height:7px; background:#9ca3af;
+            border-radius:50%; margin:0 1.5px; animation:abBounce 1.1s infinite;
+        }
+        .ab-typing span:nth-child(2){animation-delay:.18s}
+        .ab-typing span:nth-child(3){animation-delay:.36s}
+        @keyframes abBounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-7px)}}
+        #ab-chips { padding:6px 10px; display:flex; gap:6px; flex-wrap:wrap; border-top:1px solid #f0fdf4; }
+        .ab-chip {
+            font-size:11px; padding:4px 10px; border-radius:999px;
+            border:1.5px solid #d1fae5; background:#f0fdf4;
+            color:#065f46; cursor:pointer; white-space:nowrap; transition:background .15s;
+        }
+        .ab-chip:hover { background:#d1fae5; }
+        #ab-input-bar {
+            border-top:1px solid #e5e7eb; padding:10px 12px;
+            display:flex; gap:8px; align-items:flex-end; flex-shrink:0;
+        }
+        #ab-input {
+            flex:1; resize:none; border:1.5px solid #d1d5db; border-radius:10px;
+            padding:8px 11px; font-size:13px; line-height:1.4;
+            max-height:100px; overflow-y:auto; background:#fafafa;
+        }
+        #ab-input:focus { outline:none; border-color:#16a34a; }
+        #ab-send-btn {
+            width:38px; height:38px; border-radius:50%; background:#16a34a;
+            border:none; cursor:pointer; flex-shrink:0;
+            display:flex; align-items:center; justify-content:center; transition:background .15s;
+        }
+        #ab-send-btn:hover:not(:disabled) { background:#15803d; }
+        #ab-send-btn:disabled { background:#9ca3af; cursor:not-allowed; }
+
+        /* ── Mobile ── */
+        @media(max-width:760px) {
+            #ab-window { width:calc(100vw - 20px); right:10px; bottom:80px; height:82vh; }
+            #ab-sidebar {
+                position:absolute; top:0; left:0; bottom:0; z-index:10;
+                transform:translateX(-100%); transition:transform .2s ease;
+                border-radius:16px 0 0 16px;
+            }
+            #ab-sidebar.mob-open { transform:translateX(0); box-shadow:4px 0 20px rgba(0,0,0,.25); }
+            #ab-mob-toggle { display:block !important; }
+        }
+        @media(min-width:761px) {
+            #ab-window { width:740px; }
+        }
+    </style>
+
+    <!-- Bubble -->
+    <div id="ab-bubble" onclick="abToggle()" title="Ask AgriBot">
+        <i class="fas fa-seedling text-white text-xl" id="ab-bubble-icon"></i>
+        <div id="ab-notif" style="position:absolute;top:2px;right:2px;width:12px;height:12px;background:#ef4444;border-radius:50%;border:2px solid #fff;display:none;"></div>
+    </div>
+
+    <!-- Window -->
+    <div id="ab-window">
+
+        <!-- ── Sidebar ── -->
+        <div id="ab-sidebar">
+            <div id="ab-sidebar-header">
+                <span style="font-weight:700;color:#fff;font-size:13px">💬 Chats</span>
+                <button id="ab-new-btn" onclick="abNewChat()">
+                    <i class="fas fa-plus"></i> New Chat
+                </button>
+            </div>
+            <div id="ab-conv-list"></div>
+        </div>
+
+        <!-- ── Main panel ── -->
+        <div id="ab-main">
+            <!-- Header -->
+            <div id="ab-header">
+                <button id="ab-mob-toggle" onclick="abToggleSidebar()">
+                    <i class="fas fa-history"></i>
+                </button>
+                <div style="width:32px;height:32px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <i class="fas fa-seedling" style="color:#fff;font-size:13px"></i>
+                </div>
+                <div style="flex:1;min-width:0">
+                    <div style="font-weight:700;color:#fff;font-size:14px;letter-spacing:.3px">🌱 AgriBot</div>
+                    <div id="ab-conv-title" style="font-size:10px;color:#bbf7d0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Agriculture Assistant &bull; Llama 3.3</div>
+                </div>
+                <button onclick="abToggle()" style="background:none;border:none;color:rgba(255,255,255,.75);font-size:18px;cursor:pointer;line-height:1;flex-shrink:0">&#x2715;</button>
+            </div>
+
+            <!-- Messages -->
+            <div id="ab-messages"></div>
+
+            <!-- Suggestion chips -->
+            <div id="ab-chips">
+                <button class="ab-chip" onclick="abSend('How do I grow rice in Laguna?')">🌾 Growing rice</button>
+                <button class="ab-chip" onclick="abSend('Common pig diseases and treatment')">🐷 Pig diseases</button>
+                <button class="ab-chip" onclick="abSend('Best fertilizer for vegetables')">🌿 Fertilizers</button>
+            </div>
+
+            <!-- Input -->
+            <div id="ab-input-bar">
+                <textarea id="ab-input" rows="1"
+                    placeholder="Ask about crops, livestock…"
+                    oninput="abResize(this)" onkeydown="abKey(event)"></textarea>
+                <button onclick="abSend()" id="ab-send-btn">
+                    <i class="fas fa-paper-plane" style="color:#fff;font-size:13px"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    /* ── State ─────────────────────────────────────────── */
+    const AB = { open:false, busy:false, convId:null };
+
+    /* ── Open / close bubble ────────────────────────────── */
+    function abToggle() {
+        AB.open = !AB.open;
+        document.getElementById('ab-window').classList.toggle('open', AB.open);
+        document.getElementById('ab-bubble-icon').className =
+            AB.open ? 'fas fa-times text-white text-xl' : 'fas fa-seedling text-white text-xl';
+        document.getElementById('ab-notif').style.display = 'none';
+        if (AB.open) {
+            abLoadConversations();
+            setTimeout(() => document.getElementById('ab-input').focus(), 220);
+        }
+    }
+
+    function abToggleSidebar() {
+        document.getElementById('ab-sidebar').classList.toggle('mob-open');
+    }
+
+    /* ── Load & render conversation list ───────────────── */
+    function abLoadConversations() {
+        fetch('/chatbot/conversations')
+            .then(r => r.json())
+            .then(({ conversations }) => {
+                const list = document.getElementById('ab-conv-list');
+                list.innerHTML = '';
+                if (!conversations || conversations.length === 0) {
+                    list.innerHTML = '<div style="padding:24px 12px;text-align:center;color:#86efac;font-size:11px;line-height:1.6">No conversations yet.<br>Click <strong>New Chat</strong> to start!</div>';
+                    if (!AB.convId) abShowWelcome();
+                    return;
+                }
+                conversations.forEach(c => {
+                    const el = document.createElement('div');
+                    el.className = 'ab-conv-item' + (c.id === AB.convId ? ' active' : '');
+                    el.dataset.id = c.id;
+                    el.innerHTML = `
+                        <div class="ab-conv-info" onclick="abSelectConv(${c.id})">
+                            <div class="ab-conv-name">${escHtml(c.title)}</div>
+                            <div class="ab-conv-time">${abRelTime(c.updated_at)}</div>
+                        </div>
+                        <button class="ab-del-btn" onclick="abDeleteConv(${c.id},event)" title="Delete">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>`;
+                    list.appendChild(el);
+                });
+                // Auto-select most recent on first open
+                if (!AB.convId && conversations.length) {
+                    abSelectConv(conversations[0].id);
+                }
+            })
+            .catch(() => {});
+    }
+
+    /* ── Select a conversation ──────────────────────────── */
+    function abSelectConv(id) {
+        AB.convId = id;
+        document.querySelectorAll('.ab-conv-item').forEach(el =>
+            el.classList.toggle('active', parseInt(el.dataset.id) === id));
+
+        fetch(`/chatbot/conversations/${id}`)
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('ab-conv-title').textContent = data.title || 'Agriculture Assistant • Llama 3.3';
+                const msgs = document.getElementById('ab-messages');
+                msgs.innerHTML = '';
+                document.getElementById('ab-chips').style.display = 'none';
+
+                if (!data.messages || data.messages.length === 0) {
+                    abShowWelcome();
+                    document.getElementById('ab-chips').style.display = 'flex';
+                } else {
+                    data.messages.forEach(m => abAppend(m.role === 'user' ? 'user' : 'bot', m.content, false));
+                    abScroll();
+                }
+                // Close sidebar overlay on mobile
+                if (window.innerWidth < 761) {
+                    document.getElementById('ab-sidebar').classList.remove('mob-open');
+                }
+            })
+            .catch(() => {});
+    }
+
+    /* ── New chat ───────────────────────────────────────── */
+    function abNewChat() {
+        fetch('/chatbot/conversations', { method:'POST', headers:{'Content-Type':'application/json'} })
+            .then(r => r.json())
+            .then(data => {
+                AB.convId = data.id;
+                document.getElementById('ab-conv-title').textContent = 'New Chat';
+                document.getElementById('ab-messages').innerHTML = '';
+                document.getElementById('ab-chips').style.display = 'flex';
+                abShowWelcome();
+                abLoadConversations();
+                document.getElementById('ab-input').focus();
+                if (window.innerWidth < 761)
+                    document.getElementById('ab-sidebar').classList.remove('mob-open');
+            })
+            .catch(() => {});
+    }
+
+    /* ── Delete conversation ────────────────────────────── */
+    function abDeleteConv(id, e) {
+        e.stopPropagation();
+        if (!confirm('Delete this conversation?')) return;
+        fetch(`/chatbot/conversations/${id}`, { method:'DELETE' })
+            .then(() => {
+                if (AB.convId === id) {
+                    AB.convId = null;
+                    document.getElementById('ab-conv-title').textContent = 'Agriculture Assistant • Llama 3.3';
+                    document.getElementById('ab-messages').innerHTML = '';
+                    document.getElementById('ab-chips').style.display = 'flex';
+                    abShowWelcome();
+                }
+                abLoadConversations();
+            })
+            .catch(() => {});
+    }
+
+    /* ── Welcome message ────────────────────────────────── */
+    function abShowWelcome() {
+        const msgs = document.getElementById('ab-messages');
+        msgs.innerHTML = '';
+        const w = document.createElement('div');
+        w.className = 'ab-msg bot';
+        w.innerHTML = `<div class="ab-avatar"><i class="fas fa-seedling"></i></div>
+            <div class="ab-bubble">Hi! I&rsquo;m <strong>AgriBot</strong> 🌱<br>Ask me anything about crops, livestock, farming practices, or plant diseases. I&rsquo;m here to help!</div>`;
+        msgs.appendChild(w);
+    }
+
+    /* ── Send message ───────────────────────────────────── */
+    function abSend(preset) {
+        if (AB.busy) return;
+        const input = document.getElementById('ab-input');
+        const text  = (preset || input.value).trim();
+        if (!text) return;
+        if (!AB.open) abToggle();
+        document.getElementById('ab-chips').style.display = 'none';
+        input.value = ''; abResize(input);
+
+        if (!AB.convId) {
+            // Create conversation first, then send
+            fetch('/chatbot/conversations', { method:'POST', headers:{'Content-Type':'application/json'} })
+                .then(r => r.json())
+                .then(data => { AB.convId = data.id; abLoadConversations(); abDoSend(text); })
+                .catch(() => abAppend('bot', 'Connection error. Please try again.'));
+            return;
+        }
+        abDoSend(text);
+    }
+
+    function abDoSend(text) {
+        AB.busy = true;
+        document.getElementById('ab-send-btn').disabled = true;
+        abAppend('user', text);
+
+        const tid = 'ab-t-' + Date.now();
+        abAppendTyping(tid);
+
+        fetch(`/chatbot/conversations/${AB.convId}/ask`, {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ message: text })
+        })
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById(tid)?.remove();
+            abAppend('bot', data.reply || data.error || 'Sorry, something went wrong.');
+            if (data.title) document.getElementById('ab-conv-title').textContent = data.title;
+            abLoadConversations(); // refresh sidebar order + title
+        })
+        .catch(() => {
+            document.getElementById(tid)?.remove();
+            abAppend('bot', 'Connection error. Please try again.');
+        })
+        .finally(() => {
+            AB.busy = false;
+            document.getElementById('ab-send-btn').disabled = false;
+            abScroll();
+        });
+    }
+
+    /* ── Message rendering ──────────────────────────────── */
+    function abAppend(role, text, scroll=true) {
+        const msgs = document.getElementById('ab-messages');
+        const w = document.createElement('div');
+        w.className = 'ab-msg ' + role;
+        w.innerHTML = role === 'bot'
+            ? `<div class="ab-avatar"><i class="fas fa-seedling"></i></div><div class="ab-bubble">${abFmt(text)}</div>`
+            : `<div class="ab-bubble">${escHtml(text)}</div>`;
+        msgs.appendChild(w);
+        if (scroll) abScroll();
+        if (!AB.open && role === 'bot') document.getElementById('ab-notif').style.display = 'block';
+    }
+
+    function abAppendTyping(id) {
+        const msgs = document.getElementById('ab-messages');
+        const w = document.createElement('div');
+        w.className = 'ab-msg bot'; w.id = id;
+        w.innerHTML = `<div class="ab-avatar"><i class="fas fa-seedling"></i></div>
+            <div class="ab-bubble ab-typing"><span></span><span></span><span></span></div>`;
+        msgs.appendChild(w); abScroll();
+    }
+
+    /* ── Utilities ──────────────────────────────────────── */
+    function abScroll()    { const e=document.getElementById('ab-messages'); e.scrollTop=e.scrollHeight; }
+    function abResize(ta)  { ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight,100)+'px'; }
+    function abKey(e)      { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();abSend();} }
+
+    function abRelTime(iso) {
+        const d = Math.floor((Date.now() - new Date(iso)) / 1000);
+        if (d < 60)    return 'Just now';
+        if (d < 3600)  return Math.floor(d/60) + 'm ago';
+        if (d < 86400) return Math.floor(d/3600) + 'h ago';
+        return Math.floor(d/86400) + 'd ago';
+    }
+
+    function abFmt(t) {
+        return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+            .replace(/^[\*\-] (.+)$/gm,'<li>$1</li>')
+            .replace(/(<li>.*<\/li>)/gs, s=>'<ul style="padding-left:16px;margin:4px 0">'+s+'</ul>')
+            .replace(/\n/g,'<br>');
+    }
+
+    function escHtml(t) {
+        return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+    </script>
+    {% endif %}
+</body>
+</html>

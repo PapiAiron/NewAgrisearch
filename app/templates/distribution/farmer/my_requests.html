@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}My Orders - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-4xl font-bold text-gray-900 mb-2">
+                    <i class="fas fa-list-check text-blue-600 mr-3"></i>My Supply Orders
+                </h1>
+                <p class="text-gray-600">Track your supply orders and their status</p>
+            </div>
+            <a href="{{ url_for('distribution.create_request') }}" class="btn-primary inline-flex items-center gap-2">
+                <i class="fas fa-plus"></i> New Order
+            </a>
+        </div>
+    </div>
+
+    <!-- Orders List -->
+    {% if requests %}
+    <div class="space-y-6">
+        {% for req in requests %}
+        <div class="card p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                <!-- Left: Supply and Farm -->
+                <div>
+                    <div class="mb-4">
+                        <p class="text-xs text-gray-600 font-semibold uppercase mb-1">Supply</p>
+                        <h3 class="text-xl font-bold text-gray-900">{{ req.supply_name }}</h3>
+                        <span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-semibold mt-2">
+                            {{ req.supply_type }}
+                        </span>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-600 font-semibold uppercase mb-1">Farm</p>
+                        <p class="font-semibold text-gray-900">{{ req.farm.name }}</p>
+                        <p class="text-sm text-gray-600">{{ req.farm.barangay_name }}</p>
+                    </div>
+                </div>
+
+                <!-- Right: Status and Progress -->
+                <div class="flex flex-col justify-between">
+                    <div>
+                        <p class="text-xs text-gray-600 font-semibold uppercase mb-1">Status</p>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            {% if req.status == 'pending' %}
+                                <span class="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
+                                    <i class="fas fa-clock mr-1"></i>Awaiting Municipal Review
+                                </span>
+                            {% elif req.status == 'rejected' %}
+                                <span class="inline-block bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-semibold">
+                                    <i class="fas fa-times-circle mr-1"></i>Rejected
+                                </span>
+                            {% elif req.status == 'approved' %}
+                                <span class="inline-block bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-semibold">
+                                    <i class="fas fa-check mr-1"></i>Approved &ndash; Pending Distribution
+                                </span>
+                            {% elif req.status == 'ready_to_claim' %}
+                                <span class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
+                                    <i class="fas fa-bell mr-1"></i>Ready to Claim
+                                </span>
+                            {% elif req.status == 'claimed' %}
+                                <span class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
+                                    <i class="fas fa-check-circle mr-1"></i>Claimed
+                                </span>
+                            {% elif req.status == 'fulfilled' %}
+                                <span class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
+                                    <i class="fas fa-check-circle mr-1"></i>Fulfilled
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <p class="text-xs text-gray-600 font-semibold uppercase mb-1">Requested</p>
+                        <p class="text-sm text-gray-600">
+                            {{ req.quantity_requested }} {{ req.unit }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-xs text-gray-600 font-semibold uppercase mb-1">Date</p>
+                        <p class="text-sm text-gray-600">
+                            {{ req.created_at.strftime('%b %d, %Y') }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reason -->
+            {% if req.reason %}
+            <div class="bg-gray-50 p-4 rounded my-4">
+                <p class="text-xs text-gray-600 font-semibold uppercase mb-1">Your Reason</p>
+                <p class="text-gray-700">{{ req.reason }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Claim Code (Direct Municipal — ready_to_claim) -->
+            {% if req.status == 'ready_to_claim' and req.request_type == 'direct_municipal' %}
+            <div class="bg-green-50 border border-green-300 rounded-lg p-5 my-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <p class="text-xs text-green-600 font-semibold uppercase mb-1">
+                            <i class="fas fa-bell mr-1"></i> Ready to Claim — Pickup Details
+                        </p>
+                        <p class="text-green-800">
+                            <span class="font-semibold">Location:</span> {{ req.claim_location }}
+                        </p>
+                        <p class="text-green-800 mt-1">
+                            <span class="font-semibold">Deadline:</span> {{ req.claim_deadline.strftime('%B %d, %Y') }}
+                        </p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xs text-green-600 font-semibold uppercase mb-1">Your Claim Code</p>
+                        <div class="text-4xl font-bold text-green-900 font-mono tracking-widest bg-white border-2 border-green-400 rounded-lg px-4 py-2">
+                            {{ req.claim_code }}
+                        </div>
+                        <p class="text-xs text-green-600 mt-1">Present this code at the municipal hall</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Rejection Reason -->
+            {% if req.status == 'rejected' %}
+            <div class="bg-red-50 border border-red-200 p-4 rounded my-4">
+                <p class="text-xs text-red-600 font-semibold uppercase mb-1">Rejection Reason</p>
+                <p class="text-red-800">{{ req.officer_notes if req.officer_notes else 'No reason provided.' }}</p>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card p-12 text-center">
+        <div class="text-6xl text-gray-300 mb-4">
+            <i class="fas fa-inbox"></i>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-700 mb-2">No Orders Yet</h3>
+        <p class="text-gray-600 mb-6">You haven't submitted any supply orders yet</p>
+        <a href="{{ url_for('distribution.create_request') }}" class="btn-primary inline-flex items-center gap-2">
+            <i class="fas fa-plus"></i> Submit Your First Order
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

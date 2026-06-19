@@ -1,0 +1,465 @@
+{% extends "base.html" %}
+
+{% block title %}Farms - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Header Section -->
+    <div class="mb-12">
+        <div class="mb-6">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">
+                <i class="fas fa-field text-green-600 mr-3"></i>Farm Management
+            </h1>
+            <p class="text-gray-600">
+                {% if user.role == 'farmer' %}
+                    View and manage your agricultural operations
+                {% else %}
+                    All registered farms in the system
+                {% endif %}
+            </p>
+        </div>
+        {% if user.role == 'farmer' %}
+        <a href="{{ url_for('farm.create_farm') }}" class="btn-primary inline-flex items-center gap-2 whitespace-nowrap">
+            <i class="fas fa-plus"></i> <span class="hidden sm:inline">Add New Farm</span><span class="sm:hidden">+ Farm</span>
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Filter Section -->
+    <div class="card p-6 mb-8">
+        <div class="mb-4">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                <i class="fas fa-filter text-green-600 mr-2"></i>Filters & Search
+            </h3>
+        </div>
+        <form method="GET" action="{{ url_for('farm.list_farms') }}" class="space-y-4" id="searchForm">
+            <!-- Search Box with Clear Button -->
+            <div>
+                <label for="search" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-search text-green-600 mr-1"></i>Search Farms
+                    <span class="text-xs text-gray-500 font-normal ml-1">(Ctrl+K)</span>
+                </label>
+                <div class="relative">
+                    <input type="text" id="search" name="search" placeholder="Search by farm name or description..." value="{{ search_query }}" class="w-full px-4 py-3 pr-10 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition" onkeyup="autoSubmitSearch(this.form)" />
+                    {% if search_query %}
+                    <button type="button" onclick="document.getElementById('search').value=''; autoSubmitSearch(document.getElementById('searchForm'));" class="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 transition">
+                        <i class="fas fa-times-circle text-lg"></i>
+                    </button>
+                    {% endif %}
+                </div>
+                {% if pagination.total > 0 %}<p class="text-xs text-gray-500 mt-1"><strong>{{ pagination.total }}</strong> farm{{ 's' if pagination.total != 1 else '' }} found</p>{% endif %}
+            </div>
+
+            <!-- Filter Dropdowns Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Barangay Filter -->
+                {% if barangay_options|length > 1 or user.role not in ['farmer'] %}
+            <div>
+                <label for="barangay" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-map-marker-alt text-green-600 mr-1"></i>Barangay
+                </label>
+                <select id="barangay" name="barangay" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" onchange="this.form.submit()">
+                    <option value="">All Barangays</option>
+                    {% for option in barangay_options %}
+                    <option value="{{ option }}" {% if option == active_barangay %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <!-- Crop Type Filter -->
+            {% if crop_options|length > 0 %}
+            <div>
+                <label for="crop_type" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-leaf text-green-600 mr-1"></i>Crop Type
+                </label>
+                <select id="crop_type" name="crop_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" onchange="this.form.submit()">
+                    <option value="">All Crops</option>
+                    {% for option in crop_options %}
+                    <option value="{{ option }}" {% if option == active_crop %}selected{% endif %}>{{ option|title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <!-- Animal Type Filter -->
+            {% if animal_options|length > 0 %}
+            <div>
+                <label for="animal_type" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-horse text-green-600 mr-1"></i>Livestock Type
+                </label>
+                <select id="animal_type" name="animal_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" onchange="this.form.submit()">
+                    <option value="">All Livestock</option>
+                    {% for option in animal_options %}
+                    <option value="{{ option }}" {% if option == active_animal %}selected{% endif %}>{{ option|title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <!-- Clear Filters Button -->
+            <div class="flex items-end">
+                {% if active_barangay or active_crop or active_animal or search_query %}
+                <a href="{{ url_for('farm.list_farms') }}" class="w-full px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg text-sm transition text-center flex items-center justify-center gap-2">
+                    <i class="fas fa-times"></i> Clear Filters
+                </a>
+                {% endif %}
+            </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+        <div class="card p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">Total Farms</p>
+                    <p class="text-3xl font-bold text-green-600 mt-2">{{ pagination.total }}</p>
+                </div>
+                <div class="text-5xl text-green-100">
+                    <i class="fas fa-leaf"></i>
+                </div>
+            </div>
+        </div>
+
+        {% if farms %}
+        <div class="card p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">Total Area</p>
+                    <p class="text-3xl font-bold text-blue-600 mt-2">{{ "%.0f"|format(farms|map(attribute='area_square_meters')|sum) }} <span class="text-base font-normal">m²</span></p>
+                </div>
+                <div class="text-5xl text-blue-100">
+                    <i class="fas fa-expand"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">Crop Types</p>
+                    <p class="text-3xl font-bold text-yellow-600 mt-2">{{ farms|map(attribute='crop_type')|unique|list|length }}</p>
+                </div>
+                <div class="text-5xl text-yellow-100">
+                    <i class="fas fa-seedling"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">Average Size</p>
+                    <p class="text-3xl font-bold text-purple-600 mt-2">{{ "%.0f"|format(farms|map(attribute='area_square_meters')|sum / farms|length) }} <span class="text-base font-normal">m²</span></p>
+                </div>
+                <div class="text-5xl text-purple-100">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Farms Table -->
+    {% if farms %}
+    <div class="card overflow-hidden">
+        <!-- Table Header -->
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Farm Name</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Owner</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Crop Type</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Area (m²)</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Crops</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Livestock</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Barangay</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Created Date</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for farm in farms %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <!-- Farm Name -->
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center text-green-600 font-semibold text-sm">
+                                    {{ (farm.name|title)[0] if farm.name else 'F' }}
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-gray-900">{{ farm.name|title }}</p>
+                                    {% if farm.description %}
+                                    <p class="text-xs text-gray-500 truncate max-w-xs">{{ farm.description }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Owner -->
+                        <td class="px-6 py-4">
+                            <div>
+                                <p class="font-medium text-gray-900">{{ farm.owner.full_name }}</p>
+                                <p class="text-xs text-gray-500">{{ farm.owner.email }}</p>
+                            </div>
+                        </td>
+
+                        <!-- Crop Type -->
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-full">
+                                <i class="fas fa-leaf text-xs"></i>
+                                {{ farm.crop_type }}
+                            </span>
+                        </td>
+
+                        <!-- Area -->
+                        <td class="px-6 py-4">
+                            <div class="text-center">
+                                <p class="font-semibold text-gray-900">{{ "%.0f"|format(farm.area_square_meters) }}</p>
+                                <p class="text-xs text-gray-500">square meters</p>
+                            </div>
+                        </td>
+
+                        <!-- Crops -->
+                        <td class="px-6 py-4">
+                            <div class="text-center">
+                                {% set crop_count = farm.crops|length %}
+                                <p class="font-semibold text-gray-900">{{ crop_count }}</p>
+                                <p class="text-xs text-gray-500">
+                                    {% if crop_count > 0 %}
+                                        {% set active_crops = farm.crops|selectattr('status', 'equalto', 'active')|list %}
+                                        {{ active_crops|length }} active
+                                    {% else %}None{% endif %}
+                                </p>
+                            </div>
+                        </td>
+
+                        <!-- Livestock -->
+                        <td class="px-6 py-4">
+                            <div class="text-center">
+                                {% set livestock_count = farm.livestock|length %}
+                                <p class="font-semibold text-gray-900">{{ livestock_count }}</p>
+                                <p class="text-xs text-gray-500">
+                                    {% if livestock_count > 0 %}
+                                        {% set active_livestock = farm.livestock|selectattr('status', 'equalto', 'active')|list %}
+                                        {{ active_livestock|length }} active
+                                    {% else %}None{% endif %}
+                                </p>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center gap-2 px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded">
+                                <i class="fas fa-map-pin text-xs"></i>
+                                {{ farm.barangay_name }}
+                            </span>
+                        </td>
+
+                        <!-- Created Date -->
+                        <td class="px-6 py-4">
+                            <p class="text-gray-900 font-medium">{{ farm.created_at.strftime('%b %d, %Y') if farm.created_at else 'N/A' }}</p>
+                            <p class="text-xs text-gray-500">{{ farm.created_at.strftime('%I:%M %p') if farm.created_at else 'N/A' }}</p>
+                        </td>
+
+                        <!-- Actions -->
+                        <td class="px-6 py-4">
+                            <div class="flex gap-2">
+                                <a href="{{ url_for('farm.view_farm', farm_id=farm.id) }}" class="inline-flex items-center gap-1 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 text-sm font-medium rounded transition" title="View Details">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                {% if user.role == 'farmer' and user.id == farm.owner_id %}
+                                <a href="{{ url_for('farm.edit_farm', farm_id=farm.id) }}" class="inline-flex items-center gap-1 px-3 py-2 bg-green-50 hover:bg-green-100 text-green-600 text-sm font-medium rounded transition" title="Edit Farm">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                {% endif %}
+                                
+                                {% if user.role in ['victoria_admin', 'system_admin'] %}
+                                <a href="{{ url_for('farm.edit_farm', farm_id=farm.id) }}" class="inline-flex items-center gap-1 px-3 py-2 bg-green-50 hover:bg-green-100 text-green-600 text-sm font-medium rounded transition" title="Edit Farm">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <button type="button" onclick="openFarmDeleteModal({{ farm.id }}, '{{ farm.name|title }}')" class="inline-flex items-center gap-1 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-medium rounded transition" title="Delete Farm">
+                                    <i class="fas fa-trash-alt"></i> Delete
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination %}
+    <div class="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4">
+        <p class="text-sm text-gray-600">
+            {% if pagination.pages > 1 %}Showing {{ ((pagination.page - 1) * pagination.per_page) + 1 }}–{{ [pagination.page * pagination.per_page, pagination.total]|min }} of {{ pagination.total }} farms &middot; {% endif %}
+            <span class="font-medium text-gray-800">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+        </p>
+        {% if pagination.pages > 1 %}
+        <div class="flex items-center gap-1 flex-wrap justify-center">
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('farm.list_farms', page=pagination.prev_num, search=search_query, barangay=active_barangay, crop_type=active_crop, animal_type=active_animal) }}" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition">&larr; Prev</a>
+            {% else %}
+            <span class="px-3 py-2 text-sm border border-gray-300 rounded-lg text-gray-400 cursor-not-allowed">&larr; Prev</span>
+            {% endif %}
+            {% for p in range(1, pagination.pages + 1) %}
+                {% if p == pagination.page %}
+                <span class="px-3 py-2 text-sm bg-green-600 text-white rounded-lg font-bold">{{ p }}</span>
+                {% elif p == 1 or p == pagination.pages or (p >= pagination.page - 2 and p <= pagination.page + 2) %}
+                <a href="{{ url_for('farm.list_farms', page=p, search=search_query, barangay=active_barangay, crop_type=active_crop, animal_type=active_animal) }}" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition">{{ p }}</a>
+                {% elif p == 2 and pagination.page > 4 %}
+                <span class="px-2 py-2 text-sm text-gray-400">&hellip;</span>
+                {% elif p == pagination.pages - 1 and pagination.page < pagination.pages - 3 %}
+                <span class="px-2 py-2 text-sm text-gray-400">&hellip;</span>
+                {% endif %}
+            {% endfor %}
+            {% if pagination.has_next %}
+            <a href="{{ url_for('farm.list_farms', page=pagination.next_num, search=search_query, barangay=active_barangay, crop_type=active_crop, animal_type=active_animal) }}" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition">Next &rarr;</a>
+            {% else %}
+            <span class="px-3 py-2 text-sm border border-gray-300 rounded-lg text-gray-400 cursor-not-allowed">Next &rarr;</span>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% else %}
+    <!-- Empty State -->
+    <div class="card p-16 text-center">
+        <div class="text-6xl text-gray-300 mb-4">
+            <i class="fas fa-field"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-900 mb-2">No Farms Found</h3>
+        <p class="text-gray-600 mb-8">
+            {% if user.role == 'farmer' %}
+                Get started by adding your first farm. Track your crops, areas, and farm operations all in one place.
+            {% else %}
+                No farms are currently registered in the system.
+            {% endif %}
+        </p>
+        {% if user.role == 'farmer' %}
+        <a href="{{ url_for('farm.create_farm') }}" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition inline-flex items-center gap-2">
+            <i class="fas fa-plus"></i> Create Your First Farm
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete Farm Modal (for admins) -->
+<div id="farmDeleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-2xl max-w-sm mx-4">
+        <div class="p-6">
+            <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                <i class="fas fa-trash-alt text-red-600 text-xl"></i>
+            </div>
+            
+            <h3 class="text-lg font-semibold text-gray-900 text-center mb-2">
+                Delete Farm
+            </h3>
+            
+            <p class="text-gray-600 text-center mb-2">
+                Are you sure you want to delete <strong id="deleteFarmName"></strong>?
+            </p>
+            
+            <p class="text-red-600 text-center text-sm mb-6">
+                This action cannot be undone.
+            </p>
+            
+            <div class="flex gap-3">
+                <button onclick="closeFarmDeleteModal()" class="flex-1 px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium transition">
+                    <i class="fas fa-times mr-2"></i>Cancel
+                </button>
+                <button onclick="proceedFarmDelete()" class="flex-1 px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition">
+                    <i class="fas fa-trash-alt mr-2"></i>Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let deleteFarmId = null;
+
+function openFarmDeleteModal(farmId, farmName) {
+    deleteFarmId = farmId;
+    document.getElementById('deleteFarmName').textContent = farmName;
+    document.getElementById('farmDeleteModal').classList.remove('hidden');
+}
+
+function closeFarmDeleteModal() {
+    deleteFarmId = null;
+    document.getElementById('farmDeleteModal').classList.add('hidden');
+}
+
+function proceedFarmDelete() {
+    if (deleteFarmId) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/farm/${deleteFarmId}/delete`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Close modal when clicking outside
+document.getElementById('farmDeleteModal').addEventListener('click', function(event) {
+    if (event.target === this) {
+        closeFarmDeleteModal();
+    }
+});
+
+// Auto-submit search on text change with debounce
+let searchTimeout;
+let searchInput = document.getElementById('search');
+
+function autoSubmitSearch(form) {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        // Save cursor position before submit
+        const cursorPos = searchInput.selectionStart;
+        sessionStorage.setItem('searchCursorPos', cursorPos);
+        form.submit();
+    }, 300);
+}
+
+// Restore focus and cursor position after page load
+document.addEventListener('DOMContentLoaded', function() {
+    searchInput = document.getElementById('search');
+    if (searchInput) {
+        // Always auto-focus on search input when page loads
+        searchInput.focus();
+        
+        if (searchInput.value) {
+            // Restore cursor position if there's content
+            const cursorPos = sessionStorage.getItem('searchCursorPos');
+            if (cursorPos !== null) {
+                searchInput.setSelectionRange(cursorPos, cursorPos);
+                sessionStorage.removeItem('searchCursorPos');
+            } else {
+                // If no saved position, put cursor at the end
+                searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+            }
+        }
+    }
+});
+
+// Keyboard shortcut: Ctrl+K to focus search
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        document.getElementById('search').focus();
+        document.getElementById('search').select();
+    }
+});
+</script>
+
+<style>
+    .card {
+        @apply bg-white rounded-lg shadow-sm border border-gray-200;
+    }
+</style>
+{% endblock %}

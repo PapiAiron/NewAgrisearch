@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Database Management - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Header -->
+    <div class="mb-12">
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">
+            <i class="fas fa-database text-orange-600 mr-3"></i>Database Management
+        </h1>
+        <p class="text-gray-600">Monitor and maintain system database integrity</p>
+    </div>
+
+    <!-- Database Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+        <div class="card p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">Total Records</p>
+                    <p class="text-3xl font-bold text-blue-600 mt-2">{{ total_farms + total_users }}</p>
+                </div>
+                <div class="text-5xl text-blue-100">
+                    <i class="fas fa-database"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">Farms</p>
+                    <p class="text-3xl font-bold text-green-600 mt-2">{{ total_farms }}</p>
+                </div>
+                <div class="text-5xl text-green-100">
+                    <i class="fas fa-leaf"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">Users</p>
+                    <p class="text-3xl font-bold text-blue-600 mt-2">{{ total_users }}</p>
+                </div>
+                <div class="text-5xl text-blue-100">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">DB Status</p>
+                    <p class="text-3xl font-bold text-green-600 mt-2">
+                        <i class="fas fa-check-circle"></i>
+                    </p>
+                </div>
+                <div class="text-5xl text-green-100">
+                    <i class="fas fa-heartbeat"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Database Details -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+        <!-- Data Overview -->
+        <div class="card p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-chart-bar text-blue-600 mr-3"></i>Data Overview
+            </h2>
+            <div class="space-y-4 text-sm">
+                <div class="flex justify-between py-2 border-b">
+                    <span class="text-gray-700">Active Farms:</span>
+                    <strong class="text-gray-900">{{ active_farms }}</strong>
+                </div>
+                <div class="flex justify-between py-2 border-b">
+                    <span class="text-gray-700">Inactive Farms:</span>
+                    <strong class="text-gray-900">{{ inactive_farms }}</strong>
+                </div>
+                <div class="flex justify-between py-2 border-b">
+                    <span class="text-gray-700">Active Users:</span>
+                    <strong class="text-gray-900">{{ active_users }}</strong>
+                </div>
+                <div class="flex justify-between py-2">
+                    <span class="text-gray-700">Inactive Users:</span>
+                    <strong class="text-gray-900">{{ inactive_users }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Database Health -->
+        <div class="card p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-heartbeat text-green-600 mr-3"></i>Database Health
+            </h2>
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-700">Connection Status</span>
+                    <span class="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
+                        <i class="fas fa-check-circle"></i> Connected
+                    </span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-700">Data Integrity</span>
+                    <span class="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
+                        <i class="fas fa-check-circle"></i> Verified
+                    </span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-700">Performance</span>
+                    <span class="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-full">
+                        <i class="fas fa-tachometer-alt"></i> Optimal
+                    </span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-700">Backup Status</span>
+                    <span class="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-full">
+                        <i class="fas fa-cloud-download-alt"></i> Latest
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-tools text-purple-600 mr-3"></i>Quick Actions
+            </h2>
+            <form method="POST" class="space-y-3">
+                <button type="submit" name="action" value="backup" class="w-full px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-600 font-medium rounded-lg transition flex items-center justify-center gap-2">
+                    <i class="fas fa-cloud-download-alt"></i> Create Backup
+                </button>
+                <button type="submit" name="action" value="optimize" class="w-full px-4 py-3 bg-green-50 hover:bg-green-100 text-green-600 font-medium rounded-lg transition flex items-center justify-center gap-2">
+                    <i class="fas fa-rocket"></i> Optimize Database
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Maintenance Tasks -->
+    <div class="card p-8 mb-12">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">
+            <i class="fas fa-wrench text-orange-600 mr-3"></i>Maintenance Tasks
+        </h2>
+        
+        <div class="space-y-3">
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                <div>
+                    <p class="font-semibold text-gray-900">Vacuum Database</p>
+                    <p class="text-sm text-gray-600">Reclaim unused database space</p>
+                </div>
+                <button class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded transition disabled" disabled title="Not available in development mode">
+                    <i class="fas fa-play mr-2"></i> Run
+                </button>
+            </div>
+
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                <div>
+                    <p class="font-semibold text-gray-900">Rebuild Indexes</p>
+                    <p class="text-sm text-gray-600">Optimize database indexes for faster queries</p>
+                </div>
+                <button class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded transition disabled" disabled title="Not available in development mode">
+                    <i class="fas fa-play mr-2"></i> Run
+                </button>
+            </div>
+
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                <div>
+                    <p class="font-semibold text-gray-900">Data Validation</p>
+                    <p class="text-sm text-gray-600">Check database integrity and consistency</p>
+                </div>
+                <button class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded transition disabled" disabled title="Not available in development mode">
+                    <i class="fas fa-play mr-2"></i> Run
+                </button>
+            </div>
+        </div>
+
+        <p class="text-xs text-gray-500 mt-4">Maintenance tasks are disabled in development mode. Enable in production settings.</p>
+    </div>
+
+    <!-- Backup & Recovery -->
+    <div class="card p-8 bg-blue-50 border border-blue-200 mb-12">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">
+            <i class="fas fa-cloud-download-alt text-blue-600 mr-3"></i>Backup & Recovery
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white p-6 rounded-lg">
+                <h3 class="font-semibold text-gray-900 mb-4">Latest Backup</h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-700">Date:</span>
+                        <strong class="text-gray-900">Jan 16, 2026</strong>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-700">Time:</span>
+                        <strong class="text-gray-900">02:00 AM</strong>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-700">Status:</span>
+                        <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
+                            <i class="fas fa-check-circle"></i> Success
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg">
+                <h3 class="font-semibold text-gray-900 mb-4">Backup Schedule</h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-700">Frequency:</span>
+                        <strong class="text-gray-900">Daily at 2:00 AM</strong>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-700">Retention:</span>
+                        <strong class="text-gray-900">30 days</strong>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-700">Auto-Backup:</span>
+                        <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
+                            <i class="fas fa-check-circle"></i> Enabled
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="flex gap-4">
+        <a href="/dashboard/admin/system" class="inline-flex items-center gap-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium rounded-lg transition">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

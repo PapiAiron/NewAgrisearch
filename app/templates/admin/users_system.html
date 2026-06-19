@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}System User Management - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Header -->
+    <div class="mb-12">
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">
+            <i class="fas fa-users-cog text-red-600 mr-3"></i>System User Management
+        </h1>
+        <p class="text-gray-600">Full system control over all user accounts</p>
+    </div>
+
+    <!-- Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-6 gap-6 mb-12">
+        <div class="card p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">Total Users</p>
+                    <p class="text-3xl font-bold text-blue-600 mt-2">{{ total_users }}</p>
+                </div>
+                <div class="text-5xl text-blue-100">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">Active</p>
+                    <p class="text-3xl font-bold text-green-600 mt-2">{{ active_users }}</p>
+                </div>
+                <div class="text-5xl text-green-100">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">Verified</p>
+                    <p class="text-3xl font-bold text-blue-600 mt-2">{{ verified_users }}</p>
+                </div>
+                <div class="text-5xl text-blue-100">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+            </div>
+        </div>
+
+        {% for role, count in role_counts.items() %}
+        <div class="card p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">{{ role.replace('_', ' ').title() }}</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ count }}</p>
+                </div>
+                <div class="text-5xl text-gray-100">
+                    {% if role == 'farmer' %}
+                        <i class="fas fa-leaf"></i>
+                    {% elif role == 'victoria_admin' %}
+                        <i class="fas fa-shield-alt"></i>
+                    {% else %}
+                        <i class="fas fa-crown"></i>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Users Table -->
+    <div class="card overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Name</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Email</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Username</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Role</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Verified</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Joined</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% if all_users %}
+                        {% for u in all_users %}
+                        <tr class="hover:bg-gray-50 transition">
+                            <!-- Name -->
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-semibold text-sm">
+                                        {{ u.full_name[0] if u.full_name else 'U' }}
+                                    </div>
+                                    <p class="font-semibold text-gray-900">{{ u.full_name }}</p>
+                                </div>
+                            </td>
+
+                            <!-- Email -->
+                            <td class="px-6 py-4">
+                                <p class="text-gray-600">{{ u.email }}</p>
+                            </td>
+
+                            <!-- Username -->
+                            <td class="px-6 py-4">
+                                <p class="font-medium text-gray-900 font-mono text-sm">{{ u.username }}</p>
+                            </td>
+
+                            <!-- Role -->
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-3 py-1 bg-purple-100 text-purple-700 text-sm font-medium rounded-full">
+                                    {{ u.role.replace('_', ' ').title() }}
+                                </span>
+                            </td>
+
+                            <!-- Status -->
+                            <td class="px-6 py-4">
+                                {% if u.is_active %}
+                                    <span class="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
+                                        <i class="fas fa-check-circle"></i> Active
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center gap-2 px-3 py-1 bg-red-100 text-red-700 text-sm font-medium rounded-full">
+                                        <i class="fas fa-times-circle"></i> Inactive
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Verified -->
+                            <td class="px-6 py-4">
+                                {% if u.is_verified %}
+                                    <span class="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-full">
+                                        <i class="fas fa-shield-alt"></i> Yes
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center gap-2 px-3 py-1 bg-yellow-100 text-yellow-700 text-sm font-medium rounded-full">
+                                        <i class="fas fa-exclamation-circle"></i> No
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Joined Date -->
+                            <td class="px-6 py-4">
+                                <p class="text-gray-600 text-sm">{{ u.created_at.strftime('%b %d, %Y') if u.created_at else 'N/A' }}</p>
+                            </td>
+
+                            <!-- Actions -->
+                            <td class="px-6 py-4">
+                                <div class="flex gap-2 flex-wrap">
+                                    {% if not u.is_verified %}
+                                    <form method="POST" action="{{ url_for('dashboard.admin_verify_user', user_id=u.id) }}" style="display:inline;">
+                                        <button type="submit" class="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-medium rounded transition" title="Verify User">
+                                            <i class="fas fa-check"></i> Verify
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    
+                                    {% if u.id != user.id %}
+                                    <button type="button" onclick="openDeleteModal({{ u.id }}, '{{ u.full_name }}')" class="inline-flex items-center gap-1 px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-medium rounded transition" title="Delete User">
+                                        <i class="fas fa-trash-alt"></i> Delete
+                                    </button>
+                                    {% else %}
+                                    <span class="text-gray-400 text-xs">—</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="px-6 py-12 text-center">
+                            <i class="fas fa-inbox text-gray-400 text-4xl mb-4"></i>
+                            <p class="text-gray-600 text-lg">No users found</p>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="mt-8">
+        <a href="/dashboard/admin/system" class="inline-flex items-center gap-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium rounded-lg transition">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Delete User Confirmation Modal -->
+<div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-2xl max-w-sm mx-4">
+        <div class="p-6">
+            <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                <i class="fas fa-trash-alt text-red-600 text-xl"></i>
+            </div>
+            
+            <h3 class="text-lg font-semibold text-gray-900 text-center mb-2">
+                Delete User
+            </h3>
+            
+            <p class="text-gray-600 text-center mb-2">
+                Are you sure you want to delete <strong id="deleteUserName"></strong>?
+            </p>
+            
+            <p class="text-red-600 text-center text-sm mb-6">
+                This action cannot be undone.
+            </p>
+            
+            <div class="flex gap-3">
+                <button onclick="closeDeleteModal()" class="flex-1 px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium transition">
+                    <i class="fas fa-times mr-2"></i>Cancel
+                </button>
+                <button onclick="proceedDelete()" class="flex-1 px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition">
+                    <i class="fas fa-trash-alt mr-2"></i>Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let deleteUserId = null;
+
+function openDeleteModal(userId, userName) {
+    deleteUserId = userId;
+    document.getElementById('deleteUserName').textContent = userName;
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    deleteUserId = null;
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+
+function proceedDelete() {
+    if (deleteUserId) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/dashboard/admin/user/${deleteUserId}/delete`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Close modal when clicking outside
+document.getElementById('deleteModal').addEventListener('click', function(event) {
+    if (event.target === this) {
+        closeDeleteModal();
+    }
+});
+</script>
+{% endblock %}

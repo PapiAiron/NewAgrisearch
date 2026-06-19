@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Register - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center px-4 py-12">
+    <div class="w-full max-w-md">
+        <!-- Card -->
+        <div class="card p-8">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
+                    <img src="{{ url_for('static', filename='agrisearch_logo.png') }}" alt="AgriSearch Logo" class="w-10 h-10 object-contain">
+                </div>
+                <h1 class="text-3xl font-bold text-gray-900">Create Account</h1>
+                <p class="text-gray-600 mt-2">Join AgriSearch today</p>
+            </div>
+            
+            <!-- Form -->
+            <form method="POST" class="space-y-4">
+                <!-- Full Name -->
+                <div>
+                    <label for="full_name" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-id-card mr-2"></i>Full Name
+                    </label>
+                    <input 
+                        type="text" 
+                        id="full_name" 
+                        name="full_name" 
+                        class="form-input"
+                        placeholder="Juan Dela Cruz"
+                        required
+                        autofocus
+                    >
+                </div>
+                
+                <!-- Email -->
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-envelope mr-2"></i>Email
+                    </label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        class="form-input"
+                        placeholder="juan@example.com"
+                        required
+                    >
+                </div>
+                
+                <!-- Username -->
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-user mr-2"></i>Username
+                    </label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username" 
+                        class="form-input"
+                        placeholder="juandelacruz"
+                        minlength="3"
+                        required
+                    >
+                    <p class="text-xs text-gray-500 mt-1">At least 3 characters</p>
+                </div>
+                
+                <!-- Barangay -->
+                <div>
+                    <label for="barangay_id" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-map-marker-alt mr-2"></i>Barangay
+                    </label>
+                    <select 
+                        id="barangay_id" 
+                        name="barangay_id" 
+                        class="form-input"
+                        required
+                    >
+                        <option value="">Select your barangay</option>
+                        {% for id, barangay in barangays.items() %}
+                        <option value="{{ id }}">{{ barangay.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Password -->
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-lock mr-2"></i>Password
+                    </label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        class="form-input"
+                        placeholder="••••••••"
+                        minlength="8"
+                        required
+                    >
+                    <p class="text-xs text-gray-500 mt-1">At least 8 characters</p>
+                </div>
+                
+                <!-- Confirm Password -->
+                <div>
+                    <label for="password_confirm" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-lock mr-2"></i>Confirm Password
+                    </label>
+                    <input 
+                        type="password" 
+                        id="password_confirm" 
+                        name="password_confirm" 
+                        class="form-input"
+                        placeholder="••••••••"
+                        required
+                    >
+                </div>
+                
+                <!-- Submit Button -->
+                <button type="submit" class="btn-primary w-full mt-6">
+                    <i class="fas fa-user-check mr-2"></i>Create Account
+                </button>
+            </form>
+            
+            <!-- Divider -->
+            <div class="relative my-6">
+                <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t border-gray-300"></div>
+                </div>
+                <div class="relative flex justify-center text-sm">
+                    <span class="px-2 bg-white text-gray-500">or</span>
+                </div>
+            </div>
+            
+            <!-- Link -->
+            <div class="text-center text-sm text-gray-600">
+                <p>
+                    Already have an account? 
+                    <a href="{{ url_for('auth.login') }}" class="text-green-600 font-semibold hover:text-green-700">
+                        Sign in
+                    </a>
+                </p>
+                <p class="mt-2">
+                    <a href="{{ url_for('index') }}" class="text-green-600 font-semibold hover:text-green-700">
+                        Back to Home
+                    </a>
+                </p>
+            </div>
+        </div>
+        
+        <!-- Footer Note -->
+        <div class="text-center mt-8 text-sm text-gray-600">
+            <p>🌾 Empowering farmers in Victoria, Laguna</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+# Core Flask framework
+Flask>=2.3.0
+
+# Database ORM
+Flask-SQLAlchemy>=3.0.0
+SQLAlchemy>=2.0.0
+
+# Database driver
+mysql-connector-python>=8.0.0
+
+# Environment configuration
+python-dotenv>=1.0.0
+
+# Security (comes with Flask/Werkzeug, listed for clarity)
+Werkzeug>=2.3.0
+
+# HTTPS / self-signed certificate support (required for ssl_context='adhoc')
+pyopenssl>=23.0.0
+cryptography>=41.0.0
+
+# AgriBot — Groq LLM API client
+groq>=0.4.0
+
+# GIS / barangay boundary generation
+shapely>=2.0.0

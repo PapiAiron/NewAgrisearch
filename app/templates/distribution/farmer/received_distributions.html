@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Received Supplies - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-4xl font-bold text-gray-900 mb-2">
+                    <i class="fas fa-box-open text-green-600 mr-3"></i>Received Supplies
+                </h1>
+                <p class="text-gray-600">Supplies you have received and verified</p>
+            </div>
+            <a href="{{ url_for('distribution.my_requests') }}" class="btn-secondary inline-flex items-center gap-2">
+                <i class="fas fa-list"></i> My Orders
+            </a>
+        </div>
+    </div>
+
+    <!-- Distributions List -->
+    {% if distributions %}
+    <div class="space-y-6">
+        {% for dist in distributions %}
+        <div class="card p-6 border-l-4 border-l-green-500">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
+                <!-- Supply Info -->
+                <div>
+                    <p class="text-xs text-gray-600 font-semibold uppercase mb-1">Supply</p>
+                    <h3 class="text-lg font-bold text-gray-900">{{ dist.request.supply_name }}</h3>
+                    <span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-semibold mt-2">
+                        {{ dist.request.supply_type }}
+                    </span>
+                </div>
+
+                <!-- Quantity -->
+                <div>
+                    <p class="text-xs text-gray-600 font-semibold uppercase mb-1">Quantity Received</p>
+                    <p class="text-2xl font-bold text-green-600">
+                        {{ dist.quantity_distributed }} <span class="text-sm font-normal text-gray-600">{{ dist.request.unit }}</span>
+                    </p>
+                </div>
+
+                <!-- Status -->
+                <div>
+                    <p class="text-xs text-gray-600 font-semibold uppercase mb-1">Status</p>
+                    <span class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
+                        <i class="fas fa-check-double mr-1"></i>Verified
+                    </span>
+                </div>
+            </div>
+
+            <!-- Details -->
+            <div class="bg-gray-50 p-4 rounded">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <p class="text-xs text-gray-600 font-semibold uppercase">Farm</p>
+                        <p class="font-semibold text-gray-900">{{ dist.request.farm.name }}</p>
+                        <p class="text-xs text-gray-600">{{ dist.request.farm.barangay_name }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-600 font-semibold uppercase">Distributed On</p>
+                        <p class="text-sm text-gray-700">
+                            {% if dist.distribution_time %}
+                                {{ dist.distribution_time.strftime('%b %d, %Y') }}
+                            {% else %}
+                                &mdash;
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-600 font-semibold uppercase">Distribution Event</p>
+                        <p class="text-sm text-gray-700">
+                            {% if dist.event %}{{ dist.event.name }}{% else %}&mdash;{% endif %}
+                        </p>
+                    </div>
+                </div>
+                {% if dist.verified_at %}
+                <p class="text-xs text-gray-500 mt-3">
+                    <i class="fas fa-check-circle text-green-500 mr-1"></i>
+                    Verified on {{ dist.verified_at.strftime('%b %d, %Y') }}
+                    {% if dist.verification_notes %} &mdash; {{ dist.verification_notes }}{% endif %}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card p-12 text-center">
+        <div class="text-6xl text-gray-300 mb-4">
+            <i class="fas fa-box-open"></i>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-700 mb-2">No Distributions Received Yet</h3>
+        <p class="text-gray-600 mb-6">Once you verify receipt of a distributed supply, it will appear here.</p>
+        <a href="{{ url_for('distribution.my_requests') }}" class="btn-primary inline-flex items-center gap-2">
+            <i class="fas fa-list"></i> View My Orders
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

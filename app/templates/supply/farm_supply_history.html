@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}
+Supply Usage History - AgriSearch
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Supply Usage History</h1>
+            <p class="text-gray-600">Track all supply usage and deductions</p>
+        </div>
+        <a href="{{ url_for('supply.inventory_view') }}" class="btn-secondary">
+            <i class="fas fa-arrow-left mr-2"></i>Back to Inventory
+        </a>
+    </div>
+
+    {% if usage_history %}
+        <!-- Usage Records Table -->
+        <div class="card overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-100 border-b border-gray-200">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Date</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Supply Item</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Type</th>
+                        <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">Quantity Used</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Usage Type</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Applied To</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Notes</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for usage in usage_history %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 text-sm">
+                            <span class="font-semibold text-gray-900">{{ usage.usage_date.strftime('%b %d, %Y') }}</span>
+                        </td>
+                        <td class="px-4 py-3 text-sm font-medium text-gray-900">
+                            {{ usage.farm_supply.item_name }}
+                        </td>
+                        <td class="px-4 py-3 text-sm">
+                            <span class="badge badge-type">{{ usage.farm_supply.item_type|title }}</span>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-center">
+                            <span class="font-bold text-red-600">
+                                {{ "%.1f"|format(usage.quantity_used) }} {{ usage.farm_supply.unit }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-sm">
+                            <span class="badge badge-usage">
+                                {% if usage.usage_type == 'livestock_health' %}
+                                    <i class="fas fa-heart"></i> Treatment
+                                {% elif usage.usage_type == 'livestock_feeding' %}
+                                    <i class="fas fa-utensils"></i> Feeding
+                                {% elif usage.usage_type == 'crop_application' %}
+                                    <i class="fas fa-spray-can"></i> Application
+                                {% elif usage.usage_type == 'crop_planting' %}
+                                    <i class="fas fa-leaf"></i> Planting
+                                {% else %}
+                                    {{ usage.usage_type|title }}
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-600">
+                            {% if usage.related_model and usage.related_id %}
+                                {{ usage.related_model|title }} #{{ usage.related_id }}
+                            {% else %}
+                                <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-600">
+                            {% if usage.notes %}
+                                <span title="{{ usage.notes }}" class="truncate">{{ usage.notes[:50] }}{% if usage.notes|length > 50 %}...{% endif %}</span>
+                            {% else %}
+                                <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <div class="card bg-gradient-to-br from-blue-50 to-blue-100 border-l-4 border-blue-500">
+                <p class="text-sm text-gray-600">Total Usage Records</p>
+                <p class="text-3xl font-bold text-blue-600">{{ usage_history|length }}</p>
+            </div>
+            <div class="card bg-gradient-to-br from-green-50 to-green-100 border-l-4 border-green-500">
+                <p class="text-sm text-gray-600">Most Used Item</p>
+                <p class="text-lg font-bold text-green-600">
+                    {% set max_item = usage_history | groupby('farm_supply.item_name') | list | sort(attribute='1|length', reverse=true) | first %}
+                    {% if max_item %}{{ max_item[0] }}{% else %}N/A{% endif %}
+                </p>
+            </div>
+            <div class="card bg-gradient-to-br from-orange-50 to-orange-100 border-l-4 border-orange-500">
+                <p class="text-sm text-gray-600">Latest Usage</p>
+                <p class="text-sm font-bold text-orange-600">
+                    {% if usage_history %}
+                        {{ usage_history[0].usage_date.strftime('%B %d, %Y') }}
+                    {% else %}
+                        Never used
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+    {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <i class="fas fa-history text-6xl text-gray-300 mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-600 mb-2">No Usage History</h3>
+            <p class="text-gray-500 mb-6">Once you mark supplies as used, the history will appear here.</p>
+            <a href="{{ url_for('supply.inventory_view') }}" class="btn-primary">
+                <i class="fas fa-inventory mr-2"></i>Go to Inventory
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .badge-type {
+        background-color: #e0e7ff;
+        color: #3730a3;
+    }
+    
+    .badge-usage {
+        background-color: #dcfce7;
+        color: #166534;
+    }
+    
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem;
+        background-color: #f9fafb;
+        border-radius: 0.5rem;
+        border: 2px dashed #e5e7eb;
+    }
+</style>
+{% endblock %}

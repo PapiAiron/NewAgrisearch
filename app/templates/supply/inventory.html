@@ -1,0 +1,610 @@
+{% extends "base.html" %}
+
+{% block title %}
+Supply Inventory - AgriSearch
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header with Add Button -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                {% if user.role == 'farmer' %}My Inventory{% else %}Supply Inventory{% endif %}
+            </h1>
+            <p class="text-gray-600">
+                {% if user.role == 'farmer' %}Your received supplies and distribution history{% else %}Manage and track supply stock levels{% endif %}
+            </p>
+        </div>
+        {% if user.role != 'farmer' %}
+        <a href="{{ url_for('supply.add_supply') }}" class="btn-primary w-full sm:w-auto">
+            <i class="fas fa-plus mr-2"></i>
+            <span class="hidden sm:inline">Add Supply</span>
+            <span class="sm:hidden">+ Supply</span>
+        </a>
+        {% endif %}
+    </div>
+
+    {% if supply_data %}
+        <!-- Low Stock Alerts (Staff Only) -->
+        {% if user.role != 'farmer' %}
+            {% set low_stock_count = supply_data|selectattr('is_low')|list|length %}
+            {% if low_stock_count > 0 %}
+                <div class="alert alert-warning mb-6">
+                    <i class="fas fa-exclamation-triangle mr-3"></i>
+                    <strong>{{ low_stock_count }} item(s)</strong> below reorder level
+                </div>
+            {% endif %}
+        {% endif %}
+
+        <!-- Supply Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for item in supply_data %}
+                {% if user.role == 'farmer' %}
+                <!-- Farmer View: Distribution Card -->
+                <div class="card border border-gray-200">
+                    <!-- Header -->
+                    <div class="border-b border-gray-200 pb-4 mb-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <h2 class="text-lg font-semibold text-gray-900">{{ item.supply_name }}</h2>
+                            <span class="badge {% if item.status == 'received' %}badge-success{% elif item.status == 'distributed' %}badge-info{% else %}badge-warning{% endif %}">
+                                {{ item.status|title }}
+                            </span>
+                        </div>
+                        <p class="text-sm text-gray-600">{{ item.supply_type|title }}</p>
+                    </div>
+
+                    <!-- Distribution Details -->
+                    <div class="space-y-3 mb-6">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-700">Quantity:</span>
+                            <span class="text-2xl font-bold text-green-600">{{ "%.1f"|format(item.quantity) }} {{ item.unit }}</span>
+                        </div>
+                        {% if item.date_received %}
+                        <div class="flex justify-between items-center text-sm text-gray-600">
+                            <span>Date Received:</span>
+                            <span>{{ item.date_received.strftime('%B %d, %Y') if item.date_received else 'Pending' }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <!-- Staff View: Supply Card -->
+                <div class="card {% if item.is_low %}border-2 border-orange-300{% else %}border border-gray-200{% endif %}">
+                    <!-- Header -->
+                    <div class="border-b border-gray-200 pb-4 mb-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <h2 class="text-lg font-semibold text-gray-900">{{ item.supply.name }}</h2>
+                            {% if item.is_low %}
+                                <span class="badge badge-warning">
+                                    <i class="fas fa-exclamation mr-1"></i>Low Stock
+                                </span>
+                            {% else %}
+                                <span class="badge badge-success">
+                                    <i class="fas fa-check mr-1"></i>OK
+                                </span>
+                            {% endif %}
+                        </div>
+                        <p class="text-sm text-gray-600">{{ item.supply.supply_type|title }}</p>
+                    </div>
+
+                    <!-- Stock Information -->
+                    <div class="space-y-3 mb-6">
+                        <!-- Available -->
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-700">Available:</span>
+                            <span class="text-2xl font-bold text-green-600">{{ "%.1f"|format(item.total_available) }} {{ item.supply.unit }}</span>
+                        </div>
+
+                        <!-- Reserved -->
+                        {% if item.total_reserved > 0 %}
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-700">Reserved:</span>
+                                <span class="text-orange-600 font-semibold">{{ "%.1f"|format(item.total_reserved) }} {{ item.supply.unit }}</span>
+                            </div>
+                        {% endif %}
+
+                        <!-- Available for Distribution -->
+                        <div class="flex justify-between items-center bg-blue-50 p-2 rounded">
+                            <span class="text-gray-700 font-medium">For Distribution:</span>
+                            <span class="text-blue-600 font-bold">{{ "%.1f"|format(item.available_for_dist) }} {{ item.supply.unit }}</span>
+                        </div>
+
+                        <!-- Reorder Level -->
+                        <div class="flex justify-between text-sm text-gray-600">
+                            <span>Reorder Level:</span>
+                            <span>{{ "%.1f"|format(item.supply.reorder_level) }} {{ item.supply.unit }}</span>
+                        </div>
+
+                        <!-- Unit Cost -->
+                        {% if item.supply.unit_cost %}
+                            <div class="flex justify-between text-sm text-gray-600">
+                                <span>Unit Cost:</span>
+                                <span>₱{{ "%.2f"|format(item.supply.unit_cost) }}</span>
+                            </div>
+                            <div class="flex justify-between text-sm font-semibold text-gray-800">
+                                <span>Total Value:</span>
+                                <span>₱{{ "%.2f"|format(item.total_available * item.supply.unit_cost) }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Warehouse Locations -->
+                    {% if item.inventory_locations %}
+                        <div class="border-t border-gray-200 pt-4 mb-4">
+                            <p class="text-sm font-semibold text-gray-700 mb-2">Locations:</p>
+                            <div class="space-y-1">
+                                {% for inv in item.inventory_locations %}
+                                    <div class="text-sm text-gray-600">
+                                        {% if inv.warehouse_location %}
+                                            <span class="font-medium">{{ inv.warehouse_location }}:</span>
+                                        {% else %}
+                                            <span class="font-medium">Storage:</span>
+                                        {% endif %}
+                                        {{ "%.1f"|format(inv.quantity_available) }} {{ item.supply.unit }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Actions -->
+                    <div class="border-t border-gray-200 pt-4 flex gap-2">
+                        <button class="btn-secondary flex-1 text-center" onclick="openUpdateModal({{ item.supply.id }})">
+                            <i class="fas fa-edit mr-1"></i>Update
+                        </button>
+                        <button class="btn-secondary flex-1 text-center" onclick="openDistributeModal({{ item.supply.id }})">
+                            <i class="fas fa-share mr-1"></i>Distribute
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <i class="fas fa-boxes text-6xl text-gray-300 mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-600 mb-2">
+                {% if user.role == 'farmer' %}No Supplies Received Yet{% else %}No Supplies Yet{% endif %}
+            </h3>
+            <p class="text-gray-500 mb-6">
+                {% if user.role == 'farmer' %}Once you receive supplies through distribution, they will appear here.{% else %}Add your first supply item to start tracking inventory.{% endif %}
+            </p>
+            {% if user.role != 'farmer' %}
+            <a href="{{ url_for('supply.add_supply') }}" class="btn-primary">
+                <i class="fas fa-plus mr-2"></i>Add First Supply
+            </a>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <!-- Quick Links (Staff Only) -->
+    {% if user.role != 'farmer' %}
+    <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <a href="{{ url_for('supply.distribution_history') }}" class="card p-4 hover:shadow-lg transition-shadow text-center">
+            <i class="fas fa-history text-3xl text-blue-500 mb-2"></i>
+            <h3 class="font-semibold">Distribution History</h3>
+            <p class="text-sm text-gray-600">View past distributions</p>
+        </a>
+        <a href="{{ url_for('supply.usage_report') }}" class="card p-4 hover:shadow-lg transition-shadow text-center">
+            <i class="fas fa-chart-bar text-3xl text-green-500 mb-2"></i>
+            <h3 class="font-semibold">Usage Report</h3>
+            <p class="text-sm text-gray-600">View supply usage analytics</p>
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Update Stock Modal (Staff Only) -->
+<div id="updateModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="text-xl font-semibold">Update Stock Level</h3>
+            <button type="button" class="close-modal" onclick="closeUpdateModal()">&times;</button>
+        </div>
+        <form method="POST" id="updateForm">
+            <div class="modal-body space-y-4">
+                <div>
+                    <label for="quantity" class="form-label">New Quantity</label>
+                    <input type="number" id="quantity" name="quantity" step="0.1" class="form-input" required>
+                </div>
+                <div>
+                    <label for="warehouse_location" class="form-label">Warehouse Location</label>
+                    <input type="text" id="warehouse_location" name="warehouse_location" class="form-input" placeholder="e.g., Main Store, Cold Storage">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeUpdateModal()">Cancel</button>
+                <button type="submit" class="btn-primary">Update Stock</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Distribute Modal (Staff Only) -->
+<div id="distributeModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="text-xl font-semibold">Distribute Supply</h3>
+            <button type="button" class="close-modal" onclick="closeDistributeModal()">&times;</button>
+        </div>
+        <form method="POST" id="distributeForm">
+            <div class="modal-body space-y-4">
+                <div>
+                    <label for="farm_id" class="form-label">Select Farm</label>
+                    <select id="farm_id" name="farm_id" class="form-input" required>
+                        <option value="">Select a farm...</option>
+                        <!-- Farms will be populated dynamically -->
+                    </select>
+                </div>
+                <div>
+                    <label for="dist_quantity" class="form-label">Quantity</label>
+                    <input type="number" id="dist_quantity" name="quantity" step="0.1" class="form-input" required>
+                </div>
+                <div>
+                    <label for="dist_notes" class="form-label">Notes</label>
+                    <textarea id="dist_notes" name="notes" rows="3" class="form-input" placeholder="Add any notes..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeDistributeModal()">Cancel</button>
+                <button type="submit" class="btn-primary">Distribute</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .badge-success {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+
+    .badge-warning {
+        background-color: #fef3c7;
+        color: #78350f;
+    }
+
+    .badge-info {
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem;
+        background-color: #f9fafb;
+        border-radius: 0.5rem;
+        border: 2px dashed #e5e7eb;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal.hidden {
+        display: none;
+    }
+
+    .modal:not(.hidden) {
+        display: flex;
+    }
+
+    .modal-content {
+        background-color: white;
+        border-radius: 0.5rem;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .close-modal {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #6b7280;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .modal-footer {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.875rem;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        font-size: 1rem;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #10b981;
+    }
+</style>
+
+<script>
+    function openUpdateModal(supplyId) {
+        document.getElementById('updateForm').action = `/supply/${supplyId}/update-stock`;
+        document.getElementById('updateModal').classList.remove('hidden');
+    }
+
+    function closeUpdateModal() {
+        document.getElementById('updateModal').classList.add('hidden');
+    }
+
+    function openDistributeModal(supplyId) {
+        document.getElementById('distributeForm').action = `/supply/${supplyId}/distribute`;
+        // TODO: Populate farms dynamically
+        document.getElementById('distributeModal').classList.remove('hidden');
+    }
+
+    function closeDistributeModal() {
+        document.getElementById('distributeModal').classList.add('hidden');
+    }
+
+    // Close modals when clicking outside
+    document.addEventListener('click', function(event) {
+        const updateModal = document.getElementById('updateModal');
+        const distributeModal = document.getElementById('distributeModal');
+        
+        if (event.target === updateModal) {
+            closeUpdateModal();
+        }
+        if (event.target === distributeModal) {
+            closeDistributeModal();
+        }
+    });
+</script>
+
+<!-- Update Stock Modal -->
+<div id="updateModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="text-xl font-semibold">Update Stock Level</h3>
+            <button type="button" class="close-modal" onclick="closeUpdateModal()">&times;</button>
+        </div>
+        <form method="POST" id="updateForm">
+            <div class="modal-body space-y-4">
+                <div>
+                    <label for="quantity" class="form-label">New Quantity</label>
+                    <input type="number" id="quantity" name="quantity" step="0.1" class="form-input" required>
+                </div>
+                <div>
+                    <label for="warehouse_location" class="form-label">Warehouse Location</label>
+                    <input type="text" id="warehouse_location" name="warehouse_location" class="form-input" placeholder="e.g., Main Store, Cold Storage">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeUpdateModal()">Cancel</button>
+                <button type="submit" class="btn-primary">Update Stock</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Distribute Modal -->
+<div id="distributeModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="text-xl font-semibold">Distribute Supply</h3>
+            <button type="button" class="close-modal" onclick="closeDistributeModal()">&times;</button>
+        </div>
+        <form method="POST" id="distributeForm">
+            <div class="modal-body space-y-4">
+                <div>
+                    <label for="farm_id" class="form-label">Select Farm</label>
+                    <select id="farm_id" name="farm_id" class="form-input" required>
+                        <option value="">Select a farm...</option>
+                        <!-- Farms will be populated dynamically -->
+                    </select>
+                </div>
+                <div>
+                    <label for="dist_quantity" class="form-label">Quantity</label>
+                    <input type="number" id="dist_quantity" name="quantity" step="0.1" class="form-input" required>
+                </div>
+                <div>
+                    <label for="dist_notes" class="form-label">Notes</label>
+                    <textarea id="dist_notes" name="notes" rows="3" class="form-input" placeholder="Add any notes..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeDistributeModal()">Cancel</button>
+                <button type="submit" class="btn-primary">Distribute</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .badge-success {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+
+    .badge-warning {
+        background-color: #fef3c7;
+        color: #78350f;
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem;
+        background-color: #f9fafb;
+        border-radius: 0.5rem;
+        border: 2px dashed #e5e7eb;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal.hidden {
+        display: none;
+    }
+
+    .modal:not(.hidden) {
+        display: flex;
+    }
+
+    .modal-content {
+        background-color: white;
+        border-radius: 0.5rem;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .close-modal {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #6b7280;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .modal-footer {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.875rem;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        font-size: 1rem;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #10b981;
+    }
+</style>
+
+<script>
+    function openUpdateModal(supplyId) {
+        document.getElementById('updateForm').action = `/supply/${supplyId}/update-stock`;
+        document.getElementById('updateModal').classList.remove('hidden');
+    }
+
+    function closeUpdateModal() {
+        document.getElementById('updateModal').classList.add('hidden');
+    }
+
+    function openDistributeModal(supplyId) {
+        document.getElementById('distributeForm').action = `/supply/${supplyId}/distribute`;
+        // TODO: Populate farms dynamically
+        document.getElementById('distributeModal').classList.remove('hidden');
+    }
+
+    function closeDistributeModal() {
+        document.getElementById('distributeModal').classList.add('hidden');
+    }
+
+    // Close modals when clicking outside
+    document.addEventListener('click', function(event) {
+        const updateModal = document.getElementById('updateModal');
+        const distributeModal = document.getElementById('distributeModal');
+        
+        if (event.target === updateModal) {
+            closeUpdateModal();
+        }
+        if (event.target === distributeModal) {
+            closeDistributeModal();
+        }
+    });
+</script>
+{% endblock %}
+

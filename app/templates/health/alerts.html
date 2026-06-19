@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Health Alerts - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900"><i class="fas fa-bell text-orange-500 mr-3"></i>Health Alerts</h1>
+            <p class="text-gray-600 mt-2">Vaccine due dates, treatment reminders, and compliance alerts</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div class="card p-6 border-l-4 border-blue-500">
+            <h3 class="text-gray-600 text-sm font-semibold">Total Alerts</h3>
+            <p class="text-3xl font-bold text-blue-600 mt-2">{{ total_alerts }}</p>
+        </div>
+        <div class="card p-6 border-l-4 border-orange-500">
+            <h3 class="text-gray-600 text-sm font-semibold">Pending</h3>
+            <p class="text-3xl font-bold text-orange-600 mt-2">{{ pending_alerts }}</p>
+        </div>
+        <div class="card p-6 border-l-4 border-red-500">
+            <h3 class="text-gray-600 text-sm font-semibold">Critical</h3>
+            <p class="text-3xl font-bold text-red-600 mt-2">{{ critical_alerts }}</p>
+        </div>
+        <div class="card p-6 border-l-4 border-purple-500">
+            <h3 class="text-gray-600 text-sm font-semibold">Overdue</h3>
+            <p class="text-3xl font-bold text-purple-600 mt-2">{{ overdue_alerts }}</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card p-4 mb-6 flex gap-4 flex-wrap items-center">
+        <div>
+            <label class="text-sm text-gray-600 font-semibold">Status</label>
+            <select name="status" id="status-filter" class="px-3 py-2 border border-gray-300 rounded">
+                <option value="">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="resolved">Resolved</option>
+            </select>
+        </div>
+        <div>
+            <label class="text-sm text-gray-600 font-semibold">Priority</label>
+            <select name="priority" id="priority-filter" class="px-3 py-2 border border-gray-300 rounded">
+                <option value="">All Priorities</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+            </select>
+        </div>
+        <button onclick="applyFilters()" class="btn-primary">Filter</button>
+    </div>
+
+    <!-- Alerts List -->
+    {% if alerts %}
+        {% for alert in alerts %}
+        <div class="card mb-4 border-l-4
+            {% if alert.is_resolved %}
+                border-gray-400
+            {% elif alert.priority == 'critical' %}
+                border-red-500
+            {% elif alert.priority == 'high' %}
+                border-orange-500
+            {% elif alert.priority == 'medium' %}
+                border-yellow-500
+            {% else %}
+                border-blue-500
+            {% endif %}">
+            <div class="flex justify-between items-start mb-3">
+                <div>
+                    <h3 class="font-bold text-gray-900">{{ alert.alert_title }}</h3>
+                    <p class="text-sm text-gray-600 mt-1">{{ alert.alert_message }}</p>
+                </div>
+                <span class="px-3 py-1 rounded text-xs font-semibold
+                    {% if alert.priority == 'critical' %}
+                        bg-red-100 text-red-700
+                    {% elif alert.priority == 'high' %}
+                        bg-orange-100 text-orange-700
+                    {% elif alert.priority == 'medium' %}
+                        bg-yellow-100 text-yellow-700
+                    {% else %}
+                        bg-blue-100 text-blue-700
+                    {% endif %}">
+                    {{ alert.priority|upper }}
+                </span>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
+                <div>
+                    <p class="text-gray-500 text-xs font-semibold">Animal</p>
+                    <p class="font-semibold text-gray-900">
+                        <a href="{{ url_for('livestock.view_livestock', livestock_id=alert.livestock.id) }}" class="text-blue-600 hover:text-blue-800">
+                            {{ alert.livestock.unique_id }}
+                        </a>
+                    </p>
+                </div>
+                <div>
+                    <p class="text-gray-500 text-xs font-semibold">Farm</p>
+                    <p class="font-semibold text-gray-900">{{ alert.livestock.farm.name }}</p>
+                </div>
+                <div>
+                    <p class="text-gray-500 text-xs font-semibold">Alert Date</p>
+                    <p class="font-semibold text-gray-900">{{ alert.alert_date.strftime('%b %d, %Y') }}</p>
+                </div>
+                <div>
+                    <p class="text-gray-500 text-xs font-semibold">Due Date</p>
+                    <p class="font-semibold text-gray-900">
+                        {% if alert.due_date %}
+                            {{ alert.due_date.strftime('%b %d, %Y') }}
+                            {% if alert.is_overdue %}
+                                <span class="text-red-600 text-xs"> ({{ alert.days_overdue }}d overdue)</span>
+                            {% endif %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            {% if alert.is_resolved %}
+            <div class="text-sm text-gray-600 mb-3">
+                <strong>Resolved:</strong> {{ alert.resolved_date.strftime('%b %d, %Y') if alert.resolved_date else 'N/A' }}
+                {% if alert.resolution_notes %}
+                <p class="mt-1"><strong>Notes:</strong> {{ alert.resolution_notes }}</p>
+                {% endif %}
+            </div>
+            {% else %}
+            <form method="POST" action="{{ url_for('health.resolve_alert', alert_id=alert.id) }}">
+                <button type="submit" class="px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded">
+                    <i class="fas fa-check mr-2"></i>Mark Resolved
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="bg-white rounded-lg shadow-md p-12 text-center">
+        <i class="fas fa-bell-slash text-gray-400 text-5xl mb-4"></i>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">No Alerts</h3>
+        <p class="text-gray-500">
+            {% if request.args.get('status') or request.args.get('priority') %}
+                No alerts matching your filters
+            {% else %}
+                All your livestock are up to date with their health requirements!
+            {% endif %}
+        </p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Auto-refresh alerts every 5 minutes
+setTimeout(function() {
+    location.reload();
+}, 5 * 60 * 1000);
+</script>
+{% endblock %}

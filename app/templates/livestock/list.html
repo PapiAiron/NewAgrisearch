@@ -1,0 +1,459 @@
+{% extends "base.html" %}
+
+{% block title %}Livestock Management - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="mb-4">
+            <h1 class="text-3xl font-bold text-gray-900"><i class="fas fa-cow text-green-600 mr-3"></i>Livestock Management</h1>
+            <p class="text-gray-600 mt-2">Track animals, health, nutrition and productivity</p>
+        </div>
+        {% if user.role == 'farmer' %}
+        <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full">
+            <select id="farm-filter" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm sm:text-base" onchange="filterByFarm()">
+                <option value="">Select Farm</option>
+                {% for farm in farms %}
+                <option value="{{ farm.id }}">{{ farm.name }}</option>
+                {% endfor %}
+            </select>
+            {% if farms %}
+            <button class="btn-primary flex items-center justify-center gap-2 whitespace-nowrap" onclick="showCreateModal()">
+                <i class="fas fa-plus"></i> <span class="hidden sm:inline">Register Animal</span><span class="sm:hidden">Add Animal</span>
+            </button>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div class="card p-6 border-l-4 border-green-500">
+            <h3 class="text-gray-600 text-sm font-semibold">Total Animals</h3>
+            <p class="text-3xl font-bold text-green-600 mt-2">{{ total_animals }}</p>
+        </div>
+        
+        <div class="card p-6 border-l-4 border-blue-500">
+            <h3 class="text-gray-600 text-sm font-semibold">Animal Types</h3>
+            <p class="text-3xl font-bold text-blue-600 mt-2">{{ by_type|length }}</p>
+        </div>
+        
+        <div class="card p-6 border-l-4 border-orange-500">
+            <h3 class="text-gray-600 text-sm font-semibold">Vaccines Due</h3>
+            <p class="text-3xl font-bold text-orange-600 mt-2">{{ alerts|length }}</p>
+        </div>
+
+        <div class="card p-6 border-l-4 border-purple-500">
+            <h3 class="text-gray-600 text-sm font-semibold">Active Farms</h3>
+            <p class="text-3xl font-bold text-purple-600 mt-2">{{ farms|length }}</p>
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    {% if alerts %}
+    <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded">
+        <h3 class="text-red-800 font-semibold mb-3">⚠️ Upcoming Vaccine Due</h3>
+        <div class="space-y-2">
+            {% for alert in alerts[:5] %}
+            <div class="text-red-700 text-sm flex justify-between items-center">
+                <span>
+                    <strong>{{ alert.livestock.unique_id or 'ID-' ~ alert.livestock.id }}</strong>
+                    ({{ alert.livestock.animal_type }}) - <strong>{{ alert.name }}</strong>
+                </span>
+                <span class="bg-red-200 px-3 py-1 rounded text-xs">Due: {{ alert.next_due_date.strftime('%b %d') }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Filter Section -->
+    <div class="card p-6 mb-6">
+        <form method="GET" action="{{ url_for('livestock.list_livestock') }}" class="space-y-4" id="searchForm">
+            <!-- Search Box with Clear Button -->
+            <div>
+                <label for="search" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-search text-green-600 mr-1"></i>Search Livestock
+                    <span class="text-xs text-gray-500 font-normal ml-1">(Ctrl+K)</span>
+                </label>
+                <div class="relative">
+                    <input type="text" id="search" name="search" placeholder="Search by name, ID, breed, or type..." value="{{ search_query }}" class="w-full px-4 py-3 pr-10 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition" onkeyup="autoSubmitSearch(this.form)" />
+                    {% if search_query %}
+                    <button type="button" onclick="document.getElementById('search').value=''; autoSubmitSearch(document.getElementById('searchForm'));" class="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 transition">
+                        <i class="fas fa-times-circle text-lg"></i>
+                    </button>
+                    {% endif %}
+                </div>
+                {% if pagination.total > 0 %}<p class="text-xs text-gray-500 mt-1"><strong>{{ pagination.total }}</strong> animal{{ 's' if pagination.total != 1 else '' }} found</p>{% endif %}
+            </div>
+
+            <!-- Filter Dropdowns -->
+            <div class="flex gap-4 flex-wrap items-end">
+                <div>
+                    <label class="text-sm text-gray-600 font-semibold">Animal Type</label>
+                    <select name="animal_type" class="px-3 py-2 border border-gray-300 rounded" onchange="this.form.submit()">
+                        <option value="">All Types</option>
+                        {% for type_key, type_name in animal_types.items() %}
+                        <option value="{{ type_key }}" {% if type_key == active_animal %}selected{% endif %}>{{ type_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="text-sm text-gray-600 font-semibold">Status</label>
+                    <select name="status" class="px-3 py-2 border border-gray-300 rounded" onchange="this.form.submit()">
+                        <option value="active" {% if active_status == 'active' %}selected{% endif %}>Active</option>
+                        <option value="" {% if active_status == '' %}selected{% endif %}>All Status</option>
+                        <option value="sold" {% if active_status == 'sold' %}selected{% endif %}>Sold</option>
+                        <option value="deceased" {% if active_status == 'deceased' %}selected{% endif %}>Deceased</option>
+                        <option value="transferred" {% if active_status == 'transferred' %}selected{% endif %}>Transferred</option>
+                        <option value="ready" {% if active_status == 'ready' %}selected{% endif %}>✅ Ready to Sell</option>
+                    </select>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Livestock Table -->
+    {% if livestock %}
+    <div class="card overflow-hidden p-0">
+        <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-100 border-b">
+                <tr>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">ID/Name</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Type</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Farm</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Age</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Head Count</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Next Vaccine</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for animal in livestock %}
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="px-6 py-4">
+                        <div class="font-semibold text-gray-900">
+                            {{ animal.name if animal.name else (animal.animal_type|title ~ ' #' ~ animal.unique_id) if animal.unique_id else 'N/A' }}
+                        </div>
+                        {% if animal.name and animal.unique_id %}
+                        <div class="text-xs text-gray-500">ID: {{ animal.unique_id }}</div>
+                        {% endif %}
+                        {% if animal.breed %}
+                        <div class="text-xs text-gray-500">{{ animal.breed }}</div>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                            {{ animal.animal_type|title }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-700">{{ animal.farm.name }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-700">{{ animal.get_age_display() }}</td>
+                    <td class="px-6 py-4 text-sm font-semibold">{{ animal.count }} head</td>
+                    <td class="px-6 py-4">
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold
+                            {% if animal.status == 'active' %}
+                            bg-green-100 text-green-800
+                            {% elif animal.status == 'sold' %}
+                            bg-blue-100 text-blue-800
+                            {% elif animal.status == 'deceased' %}
+                            bg-gray-100 text-gray-800
+                            {% else %}
+                            bg-yellow-100 text-yellow-800
+                            {% endif %}
+                        ">
+                            {{ animal.status|title }}
+                        </span>
+                        {% if animal.is_ready_for_sale %}
+                        <span class="ml-1 px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">✅ Ready</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-sm">
+                        {% set vaccine = animal.get_next_vaccine() %}
+                        {% if vaccine %}
+                            <span class="text-orange-600 font-semibold">{{ vaccine.next_due_date.strftime('%b %d') }}</span>
+                        {% else %}
+                            <span class="text-gray-500">None scheduled</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex gap-2">
+                            <a href="{{ url_for('livestock.view_livestock', livestock_id=animal.id) }}" 
+                               class="btn-secondary text-sm">
+                                View
+                            </a>
+                            <a href="{{ url_for('health.list_diseases', livestock_id=animal.id) }}" 
+                               class="btn-danger text-sm" title="View disease records">
+                                <i class="fas fa-file-medical"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination %}
+    <div class="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4">
+        <p class="text-sm text-gray-600">
+            {% if pagination.pages > 1 %}Showing {{ ((pagination.page - 1) * pagination.per_page) + 1 }}–{{ [pagination.page * pagination.per_page, pagination.total]|min }} of {{ pagination.total }} animals &middot; {% endif %}
+            <span class="font-medium text-gray-800">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+        </p>
+        {% if pagination.pages > 1 %}
+        <div class="flex items-center gap-1 flex-wrap justify-center">
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('livestock.list_livestock', page=pagination.prev_num, search=search_query, farm_id=active_farm, animal_type=active_animal, status=active_status) }}" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition">&larr; Prev</a>
+            {% else %}
+            <span class="px-3 py-2 text-sm border border-gray-300 rounded-lg text-gray-400 cursor-not-allowed">&larr; Prev</span>
+            {% endif %}
+            {% for p in range(1, pagination.pages + 1) %}
+                {% if p == pagination.page %}
+                <span class="px-3 py-2 text-sm bg-green-600 text-white rounded-lg font-bold">{{ p }}</span>
+                {% elif p == 1 or p == pagination.pages or (p >= pagination.page - 2 and p <= pagination.page + 2) %}
+                <a href="{{ url_for('livestock.list_livestock', page=p, search=search_query, farm_id=active_farm, animal_type=active_animal, status=active_status) }}" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition">{{ p }}</a>
+                {% elif p == 2 and pagination.page > 4 %}
+                <span class="px-2 py-2 text-sm text-gray-400">&hellip;</span>
+                {% elif p == pagination.pages - 1 and pagination.page < pagination.pages - 3 %}
+                <span class="px-2 py-2 text-sm text-gray-400">&hellip;</span>
+                {% endif %}
+            {% endfor %}
+            {% if pagination.has_next %}
+            <a href="{{ url_for('livestock.list_livestock', page=pagination.next_num, search=search_query, farm_id=active_farm, animal_type=active_animal, status=active_status) }}" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition">Next &rarr;</a>
+            {% else %}
+            <span class="px-3 py-2 text-sm border border-gray-300 rounded-lg text-gray-400 cursor-not-allowed">Next &rarr;</span>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="bg-white p-8 rounded-lg shadow-md text-center">
+        <i class="fas fa-inbox text-gray-300 text-4xl mb-4"></i>
+        <h3 class="text-gray-600 text-lg font-semibold">No livestock records yet</h3>
+        <p class="text-gray-500 mt-2">Start by registering your first animal</p>
+        {% if user.role == 'farmer' and farms %}
+        <button onclick="showCreateModal()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg mt-4">
+            <i class="fas fa-plus"></i> Register First Animal
+        </button>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Create Modal -->
+{% if user.role == 'farmer' %}
+<div id="createModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-96 overflow-y-auto">
+        <div class="flex justify-between items-center p-6 border-b">
+            <h2 class="text-2xl font-bold text-gray-800">Register New Animal</h2>
+            <button onclick="closeCreateModal()" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <form method="POST" action="" id="createForm" class="p-6 space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Farm</label>
+                    <select name="farm_id" id="modal-farm-select" class="w-full px-3 py-2 border border-gray-300 rounded-lg" required onchange="updateFormAction()">
+                        <option value="">Select a farm</option>
+                        {% for farm in farms %}
+                        <option value="{{ farm.id }}">{{ farm.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Animal Type</label>
+                    <select name="animal_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg" required>
+                        <option value="">Select type</option>
+                        {% for type_key, type_name in animal_types.items() %}
+                        <option value="{{ type_key }}">{{ type_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Breed</label>
+                    <input type="text" name="breed" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., Holstein Friesian">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">ID/Tag Number</label>
+                    <input type="text" name="unique_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., TAG-001">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Age (months)</label>
+                    <input type="number" name="age_months" class="w-full px-3 py-2 border border-gray-300 rounded-lg" min="0">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Count</label>
+                    <input type="number" name="count" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="1" min="1">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Gender</label>
+                    <select name="gender" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="">Not specified</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Weight (kg)</label>
+                    <input type="number" name="weight_kg" class="w-full px-3 py-2 border border-gray-300 rounded-lg" step="0.1" min="0">
+                </div>
+
+                <div class="col-span-2">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Acquisition Date</label>
+                    <input type="date" name="acquisition_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" required>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Acquisition Cost</label>
+                    <input type="number" name="acquisition_cost" class="w-full px-3 py-2 border border-gray-300 rounded-lg" step="0.01" min="0">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Source</label>
+                    <input type="text" name="source" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., Local market">
+                </div>
+
+                <div class="col-span-2">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Location</label>
+                    <input type="text" name="location_description" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., Barn A, Pen 3">
+                </div>
+
+                <div class="col-span-2">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Notes</label>
+                    <textarea name="notes" class="w-full px-3 py-2 border border-gray-300 rounded-lg" rows="2" placeholder="Additional information..."></textarea>
+                </div>
+            </div>
+
+            <div class="flex gap-3 pt-4 border-t">
+                <button type="button" onclick="closeCreateModal()" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-semibold">
+                    Cancel
+                </button>
+                <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold">
+                    <i class="fas fa-save mr-2"></i> Register Animal
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<script>
+function showCreateModal() {
+    const farmFilter = document.getElementById('farm-filter')?.value;
+    const modal = document.getElementById('createModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        if (farmFilter) {
+            document.getElementById('modal-farm-select').value = farmFilter;
+            updateFormAction();
+        }
+    }
+}
+
+function closeCreateModal() {
+    document.getElementById('createModal').classList.add('hidden');
+}
+
+function updateFormAction() {
+    const farmId = document.getElementById('modal-farm-select').value;
+    const form = document.getElementById('createForm');
+    if (farmId) {
+        form.action = `/livestock/create/${farmId}`;
+    }
+}
+
+function filterByFarm() {
+    const farmId = document.getElementById('farm-filter').value;
+    if (farmId) {
+        window.location.href = `{{ url_for('livestock.list_livestock') }}?farm_id=${farmId}`;
+    } else {
+        window.location.href = `{{ url_for('livestock.list_livestock') }}`;
+    }
+}
+
+function applyFilters() {
+    const animalType = document.getElementById('type-filter').value;
+    const status = document.getElementById('status-filter').value;
+    const params = new URLSearchParams();
+    if (animalType) params.append('animal_type', animalType);
+    if (status) params.append('status', status);
+    
+    const queryString = params.toString();
+    window.location.href = `{{ url_for('livestock.list_livestock') }}${queryString ? '?' + queryString : ''}`;
+}
+
+function clearFilters() {
+    window.location.href = `{{ url_for('livestock.list_livestock') }}`;
+}
+
+// Close modal on backdrop click
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('createModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeCreateModal();
+        });
+    }
+});
+
+// Auto-submit search on text change with debounce
+let searchTimeout;
+let searchInput = document.getElementById('search');
+
+function autoSubmitSearch(form) {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        // Save cursor position before submit
+        const cursorPos = searchInput.selectionStart;
+        sessionStorage.setItem('searchCursorPos', cursorPos);
+        form.submit();
+    }, 300);
+}
+
+// Restore focus and cursor position after page load
+document.addEventListener('DOMContentLoaded', function() {
+    searchInput = document.getElementById('search');
+    if (searchInput) {
+        // Always auto-focus on search input when page loads
+        searchInput.focus();
+        
+        if (searchInput.value) {
+            // Restore cursor position if there's content
+            const cursorPos = sessionStorage.getItem('searchCursorPos');
+            if (cursorPos !== null) {
+                searchInput.setSelectionRange(cursorPos, cursorPos);
+                sessionStorage.removeItem('searchCursorPos');
+            } else {
+                // If no saved position, put cursor at the end
+                searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+            }
+        }
+    }
+});
+
+// Keyboard shortcut: Ctrl+K to focus search
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        document.getElementById('search').focus();
+        document.getElementById('search').select();
+    }
+});
+</script>
+{% endblock %}

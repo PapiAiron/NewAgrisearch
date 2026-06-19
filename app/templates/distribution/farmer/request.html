@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Order Supplies - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <a href="{{ url_for('dashboard.index') }}" class="text-green-600 hover:text-green-700 mb-4 inline-block">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">
+            <i class="fas fa-request-quote text-green-600 mr-2"></i>Order Supplies
+        </h1>
+        <p class="text-gray-600">Submit an order for agricultural supplies from the municipality</p>
+    </div>
+
+    <!-- Order Form -->
+    <div class="card p-8">
+        <form method="POST" class="space-y-6">
+            <input type="hidden" name="request_type" value="direct_municipal">
+
+            <!-- Farm Selection -->
+            <div>
+                <label for="farm_id" class="block text-sm font-semibold text-gray-700 mb-2">Your Farm</label>
+                <select id="farm_id" name="farm_id" class="form-input w-full" required>
+                    <option value="">Select a farm...</option>
+                    {% for farm in farms %}
+                    <option value="{{ farm.id }}">{{ farm.name }} ({{ farm.barangay_name }})</option>
+                    {% endfor %}
+                </select>
+                {% if not farms %}
+                <p class="text-sm text-red-600 mt-2">
+                    <i class="fas fa-exclamation-circle mr-1"></i>No farms registered. Please create a farm first.
+                </p>
+                {% endif %}
+            </div>
+
+            <!-- Supply Type -->
+            <div>
+                <label for="supply_type" class="block text-sm font-semibold text-gray-700 mb-2">What do you need?</label>
+                <select id="supply_type" name="supply_type" class="form-input w-full" required onchange="toggleOtherSupplyType(this)">
+                    <option value="">Select supply type...</option>
+                    {% for key, value in supply_types.items() %}
+                    <option value="{{ key }}">{{ value }}</option>
+                    {% endfor %}
+                </select>
+                <!-- Shown only when "Other" is selected -->
+                <div id="other-supply-type-wrap" class="hidden mt-2">
+                    <input type="text" id="supply_type_other" name="supply_type_other"
+                           class="form-input w-full"
+                           placeholder="e.g., Organic Compost, Irrigation Equipment, Netting..."
+                           autocomplete="off">
+                    <p class="text-xs text-gray-500 mt-1">Describe the supply category you need</p>
+                </div>
+                <p class="text-xs text-gray-500 mt-1" id="supply-type-hint">Select the category of supply you're ordering</p>
+            </div>
+
+            <!-- Supply Name -->
+            <div>
+                <label for="supply_name" class="block text-sm font-semibold text-gray-700 mb-2">Specific Product/Brand</label>
+                <input type="text" id="supply_name" name="supply_name" class="form-input w-full" 
+                       placeholder="e.g., NPK 16-16-16 Fertilizer, Broiler Feed Premium Mix" required>
+                <p class="text-xs text-gray-500 mt-1">Be specific about what you need</p>
+            </div>
+
+            <!-- Quantity and Unit -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="quantity" class="block text-sm font-semibold text-gray-700 mb-2">Quantity Needed</label>
+                    <input type="number" id="quantity" name="quantity" class="form-input w-full" 
+                           placeholder="50" step="0.01" min="0" required>
+                </div>
+                <div>
+                    <label for="unit" class="block text-sm font-semibold text-gray-700 mb-2">Unit</label>
+                    <select id="unit" name="unit" class="form-input w-full" required>
+                        <option value="">Select unit...</option>
+                        <option value="kg">Kilograms (kg)</option>
+                        <option value="bags">Bags</option>
+                        <option value="liters">Liters</option>
+                        <option value="boxes">Boxes</option>
+                        <option value="pieces">Pieces</option>
+                        <option value="units">Units</option>
+                        <option value="packets">Packets</option>
+                        <option value="cans">Cans</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Reason -->
+            <div>
+                <label for="reason" class="block text-sm font-semibold text-gray-700 mb-2">Why do you need this?</label>
+                <textarea id="reason" name="reason" rows="4" class="form-input w-full" 
+                          placeholder="Tell us why you need this supply and how you plan to use it..."></textarea>
+                <p class="text-xs text-gray-500 mt-1">Describe your need to help the municipal office process your order faster</p>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex gap-3 pt-4">
+                <button type="submit" class="btn-primary flex-1 inline-flex justify-center items-center gap-2" onclick="prepareOtherSupplyType()">
+                    <i class="fas fa-check"></i> Submit Order
+                </button>
+                <a href="{{ url_for('dashboard.index') }}" class="btn-secondary flex-1 text-center inline-flex justify-center items-center gap-2">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Info Panel -->
+    <div class="card bg-blue-50 border border-blue-200 p-6 mt-6">
+        <h3 class="text-lg font-semibold text-blue-900 mb-4">
+            <i class="fas fa-circle-info mr-2"></i>How Supply Orders Work
+        </h3>
+        <ol class="space-y-2 text-blue-800">
+            <li><strong>1. Submit:</strong> Fill out this form — sent straight to the municipal office</li>
+            <li><strong>2. Admin Reviews:</strong> Victoria Admin reviews and sets a pickup location + deadline</li>
+            <li><strong>3. Claim Code:</strong> You receive a unique claim code in "My Orders"</li>
+            <li><strong>4. Collect:</strong> Bring your claim code to the municipal hall before the deadline</li>
+        </ol>
+    </div>
+</div>
+
+<script>
+function toggleOtherSupplyType(select) {
+    const wrap = document.getElementById('other-supply-type-wrap');
+    const otherInput = document.getElementById('supply_type_other');
+    const hint = document.getElementById('supply-type-hint');
+    if (select.value === 'other') {
+        wrap.classList.remove('hidden');
+        otherInput.required = true;
+        hint.classList.add('hidden');
+    } else {
+        wrap.classList.add('hidden');
+        otherInput.required = false;
+        otherInput.value = '';
+        hint.classList.remove('hidden');
+    }
+}
+
+function prepareOtherSupplyType() {
+    const select = document.getElementById('supply_type');
+    const otherInput = document.getElementById('supply_type_other');
+    if (select.value === 'other' && otherInput.value.trim()) {
+        // Replace the select's name so the custom text is submitted as supply_type
+        let hidden = document.getElementById('supply_type_hidden');
+        if (!hidden) {
+            hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.id = 'supply_type_hidden';
+            hidden.name = 'supply_type';
+            select.parentElement.appendChild(hidden);
+        }
+        hidden.value = otherInput.value.trim();
+        select.removeAttribute('name'); // avoid duplicate field
+    }
+}
+
+
+</script>
+
+<style>
+    .form-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+</style>
+{% endblock %}

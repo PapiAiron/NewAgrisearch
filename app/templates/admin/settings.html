@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}System Settings - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Header -->
+    <div class="mb-12">
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">
+            <i class="fas fa-cog text-gray-600 mr-3"></i>System Settings
+        </h1>
+        <p class="text-gray-600">Configure and monitor your agricultural system</p>
+    </div>
+
+    <!-- System Health Overview -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+        <!-- System Status -->
+        <div class="card p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-heartbeat text-green-600 mr-3"></i>System Health
+            </h2>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-700">System Status</span>
+                    <span class="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
+                        <i class="fas fa-check-circle"></i> Operational
+                    </span>
+                </div>
+                <div class="flex items-center justify-between py-2 border-t">
+                    <span class="text-gray-700">Database</span>
+                    <span class="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
+                        <i class="fas fa-check-circle"></i> Connected
+                    </span>
+                </div>
+                <div class="flex items-center justify-between py-2 border-t">
+                    <span class="text-gray-700">API Status</span>
+                    <span class="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
+                        <i class="fas fa-check-circle"></i> Running
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Statistics -->
+        <div class="card p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-chart-pie text-blue-600 mr-3"></i>System Statistics
+            </h2>
+            <div class="space-y-3 text-sm">
+                <div class="flex justify-between py-2 border-b">
+                    <span class="text-gray-700">Total Users:</span>
+                    <strong class="text-gray-900">{{ total_users }}</strong>
+                </div>
+                <div class="flex justify-between py-2 border-b">
+                    <span class="text-gray-700">Active Farms:</span>
+                    <strong class="text-gray-900">{{ total_farms }}</strong>
+                </div>
+                <div class="flex justify-between py-2 border-b">
+                    <span class="text-gray-700">Municipal Area:</span>
+                    <strong class="text-gray-900">{{ "%.0f"|format(total_area) }} m²</strong>
+                </div>
+                <div class="flex justify-between py-2">
+                    <span class="text-gray-700">Avg. Farm Size:</span>
+                    <strong class="text-gray-900">{{ "%.0f"|format(total_area / total_farms if total_farms > 0 else 0) }} m²</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Settings -->
+        <div class="card p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-sliders-h text-purple-600 mr-3"></i>Quick Actions
+            </h2>
+            <div class="space-y-3">
+                <a href="{{ url_for('dashboard.admin_users') }}" class="block px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-600 font-medium rounded transition">
+                    <i class="fas fa-users-cog mr-2"></i>Manage Users
+                </a>
+                <a href="{{ url_for('farm.list_farms') }}" class="block px-4 py-3 bg-green-50 hover:bg-green-100 text-green-600 font-medium rounded transition">
+                    <i class="fas fa-list mr-2"></i>View All Farms
+                </a>
+                <a href="{{ url_for('dashboard.victoria_admin_dashboard') }}" class="block px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded transition">
+                    <i class="fas fa-chart-bar mr-2"></i>Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barangay Statistics -->
+    <div class="card p-8 mb-12">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">
+            <i class="fas fa-map-marked-alt text-green-600 mr-3"></i>Farms by Barangay
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {% for barangay, count in barangays.items() %}
+            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-semibold text-gray-900">{{ barangay }}</h3>
+                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-600 font-bold">
+                        {{ count }}
+                    </span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-blue-600 h-2 rounded-full" style="width: {{ (count / (barangays.values()|max if barangays.values()|max > 0 else 1)) * 100 }}%"></div>
+                </div>
+                <p class="text-xs text-gray-600 mt-2">{{ count }} farms</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- System Settings Form -->
+    <div class="card p-8 mb-12">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">
+            <i class="fas fa-tools text-orange-600 mr-3"></i>Configuration
+        </h2>
+        
+        <form method="POST" class="space-y-6">
+            <!-- Municipality Info -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-900 mb-2">
+                        <i class="fas fa-city text-blue-600 mr-2"></i>Municipality
+                    </label>
+                    <input type="text" value="Victoria, Laguna" disabled class="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded-lg border border-gray-200 cursor-not-allowed">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-900 mb-2">
+                        <i class="fas fa-home text-green-600 mr-2"></i>Total Barangays
+                    </label>
+                    <input type="text" value="{{ barangays|length }}" disabled class="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded-lg border border-gray-200 cursor-not-allowed">
+                </div>
+            </div>
+
+            <!-- System Monitoring -->
+            <div class="border-t pt-6">
+                <h3 class="text-lg font-bold text-gray-900 mb-4">
+                    <i class="fas fa-bell text-yellow-600 mr-2"></i>Notifications & Monitoring
+                </h3>
+                <div class="space-y-3">
+                    <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                        <input type="checkbox" class="w-4 h-4 rounded" checked>
+                        <span class="text-gray-900 font-medium">Email alerts for new farm registrations</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                        <input type="checkbox" class="w-4 h-4 rounded" checked>
+                        <span class="text-gray-900 font-medium">User activity monitoring</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                        <input type="checkbox" class="w-4 h-4 rounded" checked>
+                        <span class="text-gray-900 font-medium">System health notifications</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="border-t pt-6 flex gap-4">
+                <button type="submit" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition flex items-center gap-2">
+                    <i class="fas fa-save"></i> Save Settings
+                </button>
+                <a href="{{ url_for('dashboard.victoria_admin_dashboard') }}" class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium rounded-lg transition flex items-center gap-2">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="card border-red-200 bg-red-50 p-8">
+        <h2 class="text-2xl font-bold text-red-900 mb-6">
+            <i class="fas fa-exclamation-triangle text-red-600 mr-3"></i>Danger Zone
+        </h2>
+        <p class="text-red-700 mb-6">These actions can cause data loss. Proceed with caution.</p>
+        <div class="space-y-3">
+            <button disabled class="w-full px-6 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition opacity-50 cursor-not-allowed" title="Contact system admin to perform this action">
+                <i class="fas fa-trash-alt mr-2"></i> Clear Old Records (Disabled)
+            </button>
+            <p class="text-xs text-red-600">Only system administrators can perform these actions</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

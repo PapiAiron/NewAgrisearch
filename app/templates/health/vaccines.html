@@ -1,0 +1,548 @@
+{% extends "base.html" %}
+
+{% block title %}Vaccine Inventory - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900"><i class="fas fa-syringe text-green-600 mr-3"></i>Animal Vaccination</h1>
+            <p class="text-gray-600 mt-2">Vaccinate animals using available inventory</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div class="card p-6 border-l-4 border-blue-500">
+            <h3 class="text-gray-600 text-sm font-semibold">Total Vaccines</h3>
+            <p class="text-3xl font-bold text-blue-600 mt-2">{{ total_vaccines }}</p>
+        </div>
+        <div class="card p-6 border-l-4 border-yellow-500">
+            <h3 class="text-gray-600 text-sm font-semibold">Expiring Soon</h3>
+            <p class="text-3xl font-bold text-yellow-600 mt-2">{{ expiring_soon }}</p>
+        </div>
+        <div class="card p-6 border-l-4 border-red-500">
+            <h3 class="text-gray-600 text-sm font-semibold">Expired</h3>
+            <p class="text-3xl font-bold text-red-600 mt-2">{{ expired_count }}</p>
+        </div>
+        <div class="card p-6 border-l-4 border-green-500">
+            <h3 class="text-gray-600 text-sm font-semibold">Total Value</h3>
+            <p class="text-3xl font-bold text-green-600 mt-2">₱{{ "{:,.0f}".format(total_value or 0) }}</p>
+        </div>
+    </div>
+
+    <!-- Farms with Animals and Vaccines -->
+    {% if farms_data %}
+        {% for farm_data in farms_data %}
+        <div class="card overflow-hidden p-0 mb-6">
+            <!-- Farm Header -->
+            <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">{{ farm_data.farm.name }}</h2>
+                        <p class="text-blue-100 text-sm mt-1">
+                            <i class="fas fa-map-marker-alt mr-1"></i>{{ farm_data.farm.barangay_name }} | 
+                            <i class="fas fa-flask mr-1"></i>{{ farm_data.available_vaccines|length }} Available Vaccines
+                        </p>
+                    </div>
+                    <span class="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
+                        {{ farm_data.livestock|length }} Animals
+                    </span>
+                </div>
+            </div>
+
+            <!-- Available Vaccines for this Farm -->
+            <div class="bg-blue-50 px-6 py-4 border-b border-blue-200">
+                <h3 class="font-semibold text-blue-900 mb-3">
+                    <i class="fas fa-syringe mr-2"></i>Available Vaccines ({{ farm_data.available_vaccines|length }})
+                </h3>
+                {% if farm_data.available_vaccines %}
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {% for vaccine in farm_data.available_vaccines %}
+                    <div class="bg-white p-3 rounded-lg border border-green-300 shadow-sm hover:shadow-md transition">
+                        <p class="font-semibold text-sm text-gray-900">{{ vaccine.vaccine_name }}</p>
+                        <p class="text-xs text-green-700 mt-1"><strong>Stock:</strong> {{ vaccine.quantity_remaining }} {{ vaccine.unit_type }}</p>
+                        <p class="text-xs text-gray-600"><strong>Expires:</strong> {{ vaccine.expiry_date.strftime('%b %d') }}</p>
+                        {% if vaccine.cost_per_unit %}
+                        <p class="text-xs text-gray-600"><strong>Cost:</strong> ₱{{ "%.2f"|format(vaccine.cost_per_unit) }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-500 text-sm italic">No vaccines available for this farm</p>
+                {% endif %}
+            </div>
+
+            <!-- Animals and Vaccination Status -->
+            <div class="p-6">
+                {% if farm_data.livestock %}
+                <h3 class="font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-cow mr-2"></i>Livestock Status
+                </h3>
+                <div class="space-y-4">
+                    {% for animal_data in farm_data.livestock %}
+                    {% set display_name = animal_data.animal.name if animal_data.animal.name else (animal_data.animal.animal_type|title ~ ' #' ~ animal_data.animal.unique_id) %}
+                    <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition" data-livestock-id="{{ animal_data.animal.id }}" data-animal-name="{{ display_name }}" data-animal-count="{{ animal_data.animal.count or 1 }}">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h4 class="font-semibold text-gray-900" data-animal-name="{{ display_name }}">{{ display_name }}</h4>
+                                <p class="text-sm text-gray-600 flex flex-wrap items-center gap-1 mt-1">
+                                    <span class="bg-gray-100 px-2 py-0.5 rounded text-xs">{{ animal_data.animal.animal_type|title }}</span>
+                                    {% if animal_data.animal.name and animal_data.animal.unique_id %}
+                                    <span class="text-gray-500 text-xs">ID: {{ animal_data.animal.unique_id }}</span>
+                                    {% endif %}
+                                    {% if animal_data.animal.count and animal_data.animal.count > 1 %}
+                                    <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-semibold">{{ animal_data.animal.count }} heads</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold
+                                {% if animal_data.recent_vaccines %}
+                                    bg-green-100 text-green-800
+                                {% elif animal_data.upcoming_vaccines %}
+                                    bg-yellow-100 text-yellow-800
+                                {% else %}
+                                    bg-red-100 text-red-800
+                                {% endif %}">
+                                {% if animal_data.recent_vaccines %}
+                                    ✓ Vaccinated
+                                {% elif animal_data.upcoming_vaccines %}
+                                    ⚠ Due Soon
+                                {% else %}
+                                    ✗ Not Vaccinated
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <!-- Recent Vaccines -->
+                        {% if animal_data.recent_vaccines %}
+                        <div class="mb-3 bg-green-50 p-3 rounded">
+                            <p class="text-xs font-semibold text-green-900 mb-2">Recent Vaccines:</p>
+                            <div class="space-y-1">
+                                {% for vaccine_record in animal_data.recent_vaccines[:3] %}
+                                <p class="text-xs text-gray-700">
+                                    • <strong>{{ vaccine_record.name }}</strong> on {{ vaccine_record.date_administered.strftime('%b %d, %Y') }}
+                                    {% if vaccine_record.next_due_date %}
+                                    <span class="text-gray-500">(Next: {{ vaccine_record.next_due_date.strftime('%b %d, %Y') }})</span>
+                                    {% endif %}
+                                </p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Upcoming Vaccines -->
+                        {% if animal_data.upcoming_vaccines %}
+                        <div class="mb-3 bg-yellow-50 p-3 rounded">
+                            <p class="text-xs font-semibold text-yellow-900 mb-2">Upcoming Vaccines:</p>
+                            <div class="space-y-1">
+                                {% for vaccine_record in animal_data.upcoming_vaccines[:2] %}
+                                <p class="text-xs text-gray-700">
+                                    • <strong>{{ vaccine_record.name }}</strong> due {{ vaccine_record.next_due_date.strftime('%b %d, %Y') }}
+                                </p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Quick Action -->
+                        {% if farm_data.available_vaccines %}
+                        <div class="flex gap-2">
+                            <button onclick="showVaccinateModal({{ animal_data.animal.id }}, {{ farm_data.farm.id }})" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm font-semibold flex items-center justify-center gap-1">
+                                <i class="fas fa-syringe"></i>Vaccinate
+                            </button>
+                            <a href="{{ url_for('livestock.view_livestock', livestock_id=animal_data.animal.id) }}" class="flex-1 text-center border border-blue-600 text-blue-600 hover:bg-blue-50 px-3 py-2 rounded text-sm font-semibold">
+                                <i class="fas fa-edit mr-1"></i>More
+                            </a>
+                        </div>
+                        {% else %}
+                        <div class="text-sm text-gray-500 italic">
+                            No vaccines available for vaccination
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-8">
+                    <p class="text-gray-500">No animals in this farm yet</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- All Vaccines for this Farm (Inventory) -->
+            {% if farm_data.all_vaccines %}
+            <div class="border-t border-gray-200 bg-gray-50 p-6">
+                <button onclick="toggleFarmVaccines({{ farm_data.farm.id }})" class="text-blue-600 hover:text-blue-800 font-semibold text-sm">
+                    <i class="fas fa-chevron-down mr-2" id="chevron-{{ farm_data.farm.id }}"></i>
+                    View All Inventory ({{ farm_data.all_vaccines|length }})
+                </button>
+                <div id="farm-vaccines-{{ farm_data.farm.id }}" class="hidden mt-4">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-white border-b">
+                                    <th class="px-4 py-2 text-left font-semibold text-gray-700">Vaccine Name</th>
+                                    <th class="px-4 py-2 text-left font-semibold text-gray-700">Stock</th>
+                                    <th class="px-4 py-2 text-left font-semibold text-gray-700">Expiry</th>
+                                    <th class="px-4 py-2 text-left font-semibold text-gray-700">Status</th>
+                                    <th class="px-4 py-2 text-left font-semibold text-gray-700">Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for vaccine in farm_data.all_vaccines %}
+                                <tr class="border-b border-gray-200 hover:bg-white">
+                                    <td class="px-4 py-2">
+                                        <div class="font-semibold text-gray-900">{{ vaccine.vaccine_name }}</div>
+                                        <div class="text-xs text-gray-500">{{ vaccine.vaccine_code or '-' }}</div>
+                                    </td>
+                                    <td class="px-4 py-2 text-sm text-gray-900">
+                                        {{ vaccine.quantity_remaining }}/{{ vaccine.quantity_units }} {{ vaccine.unit_type }}
+                                    </td>
+                                    <td class="px-4 py-2 text-sm text-gray-900">
+                                        {{ vaccine.expiry_date.strftime('%b %d, %Y') if vaccine.expiry_date else '-' }}
+                                    </td>
+                                    <td class="px-4 py-2">
+                                        <span class="px-2 py-1 rounded text-xs font-semibold
+                                            {% if vaccine.is_expired %}
+                                                bg-red-100 text-red-700
+                                            {% elif vaccine.expiry_status == 'expiring_soon' %}
+                                                bg-yellow-100 text-yellow-700
+                                            {% else %}
+                                                bg-green-100 text-green-700
+                                            {% endif %}">
+                                            {% if vaccine.is_expired %}Expired{% elif vaccine.expiry_status == 'expiring_soon' %}Expiring{% else %}Good{% endif %}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-2 text-sm text-gray-900">
+                                        ₱{{ "%.2f"|format(vaccine.cost_per_unit or 0) }}/unit
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+    <!-- Empty State -->
+    <div class="bg-white rounded-lg shadow-md p-12 text-center">
+        <i class="fas fa-inbox text-gray-300 text-5xl mb-4"></i>
+        <h3 class="text-gray-600 text-xl font-semibold">No farms available</h3>
+        <p class="text-gray-500 mt-2">Create farms and add livestock to start managing vaccines</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function toggleFarmVaccines(farmId) {
+    const container = document.getElementById(`farm-vaccines-${farmId}`);
+    const chevron = document.getElementById(`chevron-${farmId}`);
+    
+    container.classList.toggle('hidden');
+    chevron.classList.toggle('fa-chevron-down');
+    chevron.classList.toggle('fa-chevron-up');
+}
+
+function showAddVaccineModal() {
+    // This would open a modal to add vaccines
+    alert('Add Vaccine functionality');
+}
+</script>
+
+<!-- Vaccination Modal -->
+<div id="vaccinateModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
+        <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-white">Vaccinate Animal</h2>
+            <button onclick="closeVaccinateModal()" class="text-white text-2xl">&times;</button>
+        </div>
+        <div class="p-6">
+            <!-- Animal Info -->
+            <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <p class="text-sm text-gray-600">Animal:</p>
+                <p class="text-lg font-semibold text-gray-800" id="vaccinateAnimalName">--</p>
+                <p class="text-sm text-gray-500 mt-1" id="vaccinateAnimalCount"></p>
+            </div>
+
+            <form id="vaccinateForm" onsubmit="handleVaccination(event)">
+                <div class="space-y-4">
+                    <!-- Vaccine Selection -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Select Vaccine *</label>
+                        <select id="vaccineSelect" name="vaccine_id" required onchange="updateVaccineInfo()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                            <option value="">-- Choose Vaccine --</option>
+                        </select>
+                    </div>
+
+                    <!-- Vaccine Info (Auto-populated) -->
+                    <div id="vaccineInfoSection" class="hidden p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <p class="text-gray-600">Dosage:</p>
+                                <p class="font-semibold text-gray-800" id="dosageDisplay">-</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-600">Cost:</p>
+                                <p class="font-semibold text-gray-800" id="costDisplay">-</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-600">Stock Available:</p>
+                                <p class="font-semibold text-gray-800" id="stockDisplay">-</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-600">Expiry Date:</p>
+                                <p class="font-semibold text-gray-800" id="expiryDisplay">-</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes (Optional) -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Notes (Optional)</label>
+                        <textarea name="notes" rows="2" placeholder="e.g., No adverse reaction..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"></textarea>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="mt-6 flex gap-3">
+                    <button type="submit" id="vaccinateSubmitBtn" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold">
+                        Confirm Vaccination
+                    </button>
+                    <button type="button" onclick="closeVaccinateModal()" class="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-semibold">
+                        Cancel
+                    </button>
+                </div>
+
+                <!-- Status Messages -->
+                <div id="vaccinateMessage" class="mt-4 hidden p-3 rounded-lg text-sm font-semibold"></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global state for vaccination modal
+let currentVaccinationData = {
+    livestockId: null,
+    farmId: null,
+    animalCount: 1,
+    availableVaccines: []
+};
+
+function showVaccinateModal(livestockId, farmId) {
+    currentVaccinationData.livestockId = livestockId;
+    currentVaccinationData.farmId = farmId;
+    
+    // Show modal
+    document.getElementById('vaccinateModal').classList.remove('hidden');
+    
+    // Get animal data and update UI
+    getAnimalData(livestockId);
+    
+    // Load available vaccines for this farm
+    loadAvailableVaccines(farmId);
+}
+
+function closeVaccinateModal() {
+    document.getElementById('vaccinateModal').classList.add('hidden');
+    document.getElementById('vaccinateForm').reset();
+    document.getElementById('vaccineInfoSection').classList.add('hidden');
+    document.getElementById('vaccinateMessage').classList.add('hidden');
+    const submitBtn = document.getElementById('vaccinateSubmitBtn');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Confirm Vaccination';
+    submitBtn.title = '';
+    currentVaccinationData.animalCount = 1;
+}
+
+function getAnimalData(livestockId) {
+    const animalCards = document.querySelectorAll('[data-livestock-id]');
+    for (let card of animalCards) {
+        if (parseInt(card.dataset.livestockId) === livestockId) {
+            const nameEl = card.querySelector('[data-animal-name]');
+            if (nameEl) {
+                document.getElementById('vaccinateAnimalName').textContent = nameEl.dataset.animalName;
+            }
+            const count = parseInt(card.dataset.animalCount) || 1;
+            currentVaccinationData.animalCount = count;
+            const countEl = document.getElementById('vaccinateAnimalCount');
+            if (count > 1) {
+                countEl.textContent = `Group of ${count} heads — ${count} vaccine doses will be deducted from inventory`;
+                countEl.classList.remove('hidden');
+            } else {
+                countEl.textContent = '';
+            }
+            break;
+        }
+    }
+}
+
+function loadAvailableVaccines(farmId) {
+    console.log('[Vaccines] Loading vaccines for farm:', farmId);
+    
+    fetch(`/livestock/api/vaccines?farm_id=${farmId}`)
+        .then(response => {
+            console.log('[Vaccines] API Response Status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('[Vaccines] API Data received:', data);
+            
+            const vaccineSelect = document.getElementById('vaccineSelect');
+            vaccineSelect.innerHTML = '<option value="">-- Choose Vaccine --</option>';
+            
+            // API returns array directly, not wrapped in object
+            currentVaccinationData.availableVaccines = Array.isArray(data) ? data : (data.vaccines || []);
+            console.log('[Vaccines] Parsed vaccines:', currentVaccinationData.availableVaccines);
+            
+            if (currentVaccinationData.availableVaccines.length === 0) {
+                console.warn('[Vaccines] No vaccines available for farm', farmId);
+                vaccineSelect.innerHTML += '<option disabled>No vaccines available</option>';
+                return;
+            }
+            
+            console.log('[Vaccines] Adding', currentVaccinationData.availableVaccines.length, 'vaccines to dropdown');
+            currentVaccinationData.availableVaccines.forEach(vaccine => {
+                const option = document.createElement('option');
+                option.value = vaccine.id;
+                option.textContent = `${vaccine.vaccine_name} (${vaccine.quantity_remaining} available)`;
+                vaccineSelect.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('[Vaccines] Error loading vaccines:', error);
+            showVaccinateMessage('Error loading vaccines: ' + error.message, 'error');
+        });
+}
+
+function updateVaccineInfo() {
+    const vaccineSelect = document.getElementById('vaccineSelect');
+    const selectedId = vaccineSelect.value;  // Keep as string, don't parse
+    
+    if (!selectedId) {
+        document.getElementById('vaccineInfoSection').classList.add('hidden');
+        return;
+    }
+    
+    const vaccine = currentVaccinationData.availableVaccines.find(v => v.id === selectedId);
+    if (!vaccine) return;
+    
+    const count = currentVaccinationData.animalCount || 1;
+    const totalCost = (vaccine.cost_per_unit || 0) * count;
+    
+    // Update display
+    document.getElementById('dosageDisplay').textContent = count > 1
+        ? `${count} × 1 ${vaccine.unit_type || 'dose'} = ${count} doses total`
+        : `1 ${vaccine.unit_type || 'dose'}`;
+    document.getElementById('costDisplay').textContent = count > 1
+        ? `₱${totalCost.toFixed(2)} (₱${vaccine.cost_per_unit ? vaccine.cost_per_unit.toFixed(2) : '0.00'} × ${count})`
+        : `₱${vaccine.cost_per_unit ? vaccine.cost_per_unit.toFixed(2) : '0.00'}`;
+    
+    const stockOk = vaccine.quantity_remaining >= count;
+    document.getElementById('stockDisplay').textContent =
+        `${vaccine.quantity_remaining} available${count > 1 ? ` (need ${count})` : ''}`;
+    document.getElementById('stockDisplay').className =
+        `font-semibold ${stockOk ? 'text-gray-800' : 'text-red-600'}`;
+    document.getElementById('expiryDisplay').textContent = vaccine.expiry_date ? new Date(vaccine.expiry_date).toLocaleDateString() : 'N/A';
+    
+    document.getElementById('vaccineInfoSection').classList.remove('hidden');
+    
+    // Disable submit if not enough stock
+    const submitBtn = document.getElementById('vaccinateSubmitBtn');
+    submitBtn.disabled = !stockOk;
+    submitBtn.title = stockOk ? '' : `Not enough stock for ${count} heads`;
+}
+
+function handleVaccination(event) {
+    event.preventDefault();
+    
+    const vaccineId = document.getElementById('vaccineSelect').value;  // Keep as string with prefix
+    const notes = document.querySelector('textarea[name="notes"]').value;
+    
+    if (!vaccineId || !currentVaccinationData.livestockId) {
+        showVaccinateMessage('Please select a vaccine', 'error');
+        return;
+    }
+    
+    const submitBtn = document.getElementById('vaccinateSubmitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Vaccinating...';
+    
+    fetch('/health/api/vaccinate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            livestock_id: currentVaccinationData.livestockId,
+            vaccine_inventory_id: vaccineId,
+            notes: notes
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showVaccinateMessage(data.message, 'success');
+            setTimeout(() => {
+                closeVaccinateModal();
+                location.reload(); // Reload to show updated vaccination status
+            }, 1500);
+        } else {
+            showVaccinateMessage(data.message, 'error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Confirm Vaccination';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showVaccinateMessage('Error vaccinating animal', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Confirm Vaccination';
+    });
+}
+
+function showVaccinateMessage(message, type) {
+    const msgEl = document.getElementById('vaccinateMessage');
+    msgEl.textContent = message;
+    msgEl.className = `mt-4 p-3 rounded-lg text-sm font-semibold ${
+        type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+    }`;
+    msgEl.classList.remove('hidden');
+}
+
+function toggleFarmVaccines(farmId) {
+    const container = document.getElementById(`farm-vaccines-${farmId}`);
+    const chevron = document.getElementById(`chevron-${farmId}`);
+    
+    if (container.classList.contains('hidden')) {
+        container.classList.remove('hidden');
+        chevron.classList.add('fa-chevron-up');
+        chevron.classList.remove('fa-chevron-down');
+    } else {
+        container.classList.add('hidden');
+        chevron.classList.add('fa-chevron-down');
+        chevron.classList.remove('fa-chevron-up');
+    }
+}
+
+// Set today's date as default for any date inputs
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    const dateInputs = document.querySelectorAll('input[type="date"]');
+    dateInputs.forEach(input => {
+        if (!input.value) {
+            input.value = today;
+        }
+    });
+});
+</script>
+{% endblock %}

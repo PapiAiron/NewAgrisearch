@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}Victoria Admin Dashboard - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Welcome Section -->
+    <div class="mb-12">
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">
+            Victoria Administrator Dashboard
+        </h1>
+        <p class="text-lg text-gray-600">
+            <i class="fas fa-shield-alt text-blue-600 mr-2"></i>
+            System-wide Administration
+        </p>
+    </div>
+    
+    <!-- Direct Requests Alert Banner -->
+    {% if direct_requests_count is defined and direct_requests_count %}
+    <div class="bg-blue-50 border border-blue-300 rounded-xl p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-inbox text-blue-600 text-lg"></i>
+            </div>
+            <div>
+                <p class="font-bold text-blue-800 text-base">
+                    {{ direct_requests_count }} direct supply request{{ 's need' if direct_requests_count != 1 else ' needs' }} your review
+                </p>
+                <p class="text-blue-700 text-sm mt-0.5">Farmers submitted these requests directly to the municipal office — no officer needed.</p>
+            </div>
+        </div>
+        <a href="{{ url_for('distribution.admin_direct_requests') }}"
+           class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition text-sm flex-shrink-0">
+            <i class="fas fa-inbox"></i> Review Now
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+        <!-- Total Farms -->
+        <div class="card p-6 hover:shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Total Farms</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ total_farms }}</p>
+                </div>
+                <div class="text-4xl text-green-600 opacity-20">
+                    <i class="fas fa-tractor"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total Users -->
+        <div class="card p-6 hover:shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Total Users</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ total_users }}</p>
+                </div>
+                <div class="text-4xl text-blue-600 opacity-20">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total Area -->
+        <div class="card p-6 hover:shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Total Area</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ "%.0f"|format(total_area) }} m²</p>
+                </div>
+                <div class="text-4xl text-yellow-600 opacity-20">
+                    <i class="fas fa-map"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Verified Accounts -->
+        <div class="card p-6 hover:shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Role Distribution</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ role_counts|length }}</p>
+                </div>
+                <div class="text-4xl text-purple-600 opacity-20">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Livestock -->
+        <div class="card p-6 hover:shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Total Animals</p>
+                    <p class="text-3xl font-bold text-amber-700 mt-2">{{ total_livestock }}</p>
+                </div>
+                <div class="text-4xl text-amber-600 opacity-20">
+                    <i class="fas fa-cow"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Health Metrics Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <!-- Animals with Diseases -->
+        <div class="card p-6 hover:shadow-lg border-l-4 border-red-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Animals with Diseases</p>
+                    <p class="text-3xl font-bold text-red-600 mt-2">{{ animals_with_diseases }}</p>
+                </div>
+                <div class="text-4xl text-red-600 opacity-20">
+                    <i class="fas fa-virus"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Vaccines Due -->
+        <div class="card p-6 hover:shadow-lg border-l-4 border-yellow-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Vaccines Due (7 days)</p>
+                    <p class="text-3xl font-bold text-yellow-600 mt-2">{{ upcoming_vaccines }}</p>
+                </div>
+                <div class="text-4xl text-yellow-600 opacity-20">
+                    <i class="fas fa-syringe"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Vaccine Inventory -->
+        <div class="card p-6 hover:shadow-lg border-l-4 border-green-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Vaccine Stock</p>
+                    <p class="text-3xl font-bold text-green-600 mt-2">{{ vaccines_count }}</p>
+                    <p class="text-xs text-red-600 mt-1">{{ expired_vaccines }} expired, {{ expiring_soon_vaccines }} expiring</p>
+                </div>
+                <div class="text-4xl text-green-600 opacity-20">
+                    <i class="fas fa-box"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Health Alerts -->
+        <div class="card p-6 hover:shadow-lg border-l-4 border-orange-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Health Alerts</p>
+                    <p class="text-3xl font-bold text-orange-600 mt-2">{{ total_health_alerts }}</p>
+                    <p class="text-xs text-red-600 mt-1">{{ critical_alerts }} critical</p>
+                </div>
+                <div class="text-4xl text-orange-600 opacity-20">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Management Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <!-- User Roles -->
+        <div class="card p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-users-cog text-blue-600 mr-3"></i>User Roles
+            </h2>
+            
+            <div class="space-y-3">
+                {% for role, count in role_counts.items() %}
+                <div class="flex items-center justify-between bg-gray-50 p-3 rounded">
+                    <span class="text-gray-900 font-medium capitalize">{{ role.replace('_', ' ') }}</span>
+                    <span class="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">{{ count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- System Overview -->
+        <div class="card p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-chart-pie text-green-600 mr-3"></i>System Overview
+            </h2>
+            
+            <div class="space-y-4 text-sm">
+                <div class="flex justify-between py-2 border-b">
+                    <span class="text-gray-700">Active Farms:</span>
+                    <strong class="text-gray-900">{{ total_farms }}</strong>
+                </div>
+                <div class="flex justify-between py-2 border-b">
+                    <span class="text-gray-700">Total Users:</span>
+                    <strong class="text-gray-900">{{ total_users }}</strong>
+                </div>
+                <div class="flex justify-between py-2 border-b">
+                    <span class="text-gray-700">Municipal Area:</span>
+                    <strong class="text-gray-900">{{ "%.0f"|format(total_area) }} m²</strong>
+                </div>
+                <div class="flex justify-between py-2">
+                    <span class="text-gray-700">User Roles:</span>
+                    <strong class="text-gray-900">{{ role_counts|length }}</strong>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Links -->
+        <div class="card p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-link text-purple-600 mr-3"></i>Management
+            </h2>
+            
+            <div class="space-y-2">
+                <a href="{{ url_for('dashboard.profile') }}" class="block px-4 py-2 text-gray-900 hover:bg-gray-100 rounded transition">
+                    <i class="fas fa-user-circle text-green-600 mr-2"></i>View Profile
+                </a>
+                <a href="{{ url_for('distribution.list_cycles') }}" class="block px-4 py-2 text-gray-900 hover:bg-gray-100 rounded transition font-medium text-blue-600 hover:text-blue-800">
+                    <i class="fas fa-cubes text-blue-600 mr-2"></i>District Supply Distribution
+                </a>
+                <a href="{{ url_for('dashboard.admin_users') }}" class="block px-4 py-2 text-gray-900 hover:bg-gray-100 rounded transition font-medium text-blue-600 hover:text-blue-800">
+                    <i class="fas fa-users-cog text-blue-600 mr-2"></i>User Management
+                </a>
+                <a href="{{ url_for('dashboard.admin_settings') }}" class="block px-4 py-2 text-gray-900 hover:bg-gray-100 rounded transition font-medium text-orange-600 hover:text-orange-800">
+                    <i class="fas fa-cog text-orange-600 mr-2"></i>System Settings
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Detailed Lists -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Recent Farms -->
+        <div class="card p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-list text-green-600 mr-3"></i>All Farms ({{ total_farms }})
+            </h2>
+            
+            {% if farms %}
+            <div class="space-y-3 max-h-96 overflow-y-auto">
+                {% for farm in farms[:10] %}
+                <div class="border-b pb-3 last:border-b-0">
+                    <p class="font-medium text-gray-900">{{ farm.name }}</p>
+                    <p class="text-xs text-gray-600">{{ farm.barangay_name }} | {{ farm.crop_type }} | {{ "%.0f"|format(farm.area_square_meters) }} m²</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% if farms|length > 10 %}
+            <p class="text-center text-gray-600 text-sm mt-4">and {{ farms|length - 10 }} more...</p>
+            {% endif %}
+            {% else %}
+            <p class="text-gray-600">No farms registered</p>
+            {% endif %}
+        </div>
+        
+        <!-- Users by Role -->
+        <div class="card p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-id-card text-blue-600 mr-3"></i>All Users ({{ total_users }})
+            </h2>
+            
+            {% if users %}
+            <div class="space-y-3 max-h-96 overflow-y-auto">
+                {% for user in users[:10] %}
+                <div class="border-b pb-3 last:border-b-0">
+                    <p class="font-medium text-gray-900">{{ user.full_name }}</p>
+                    <p class="text-xs text-gray-600">{{ user.role.replace('_', ' ').title() }} | {{ user.email }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% if users|length > 10 %}
+            <p class="text-center text-gray-600 text-sm mt-4">and {{ users|length - 10 }} more...</p>
+            {% endif %}
+            {% else %}
+            <p class="text-gray-600">No users registered</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

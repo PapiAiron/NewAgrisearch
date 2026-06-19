@@ -1,0 +1,786 @@
+{% extends "base.html" %}
+{% block title %}Farm Map{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #map-page-wrapper { display:flex; height:calc(100vh - 64px); overflow:hidden; position:relative; }
+
+    #map-panel {
+        width:320px; min-width:320px; display:flex; flex-direction:column;
+        overflow:hidden; background:#fff; border-right:1px solid #e5e7eb; z-index:10;
+        transition:transform .25s ease;
+    }
+    #map-container { flex:1; position:relative; overflow:hidden; }
+    #map { width:100%; height:100%; }
+
+    .farm-item { cursor:pointer; border-left:3px solid transparent; transition:all .15s; }
+    .farm-item:hover  { background:#f9fafb; }
+    .farm-item.active { background:#ecfdf5; border-left-color:#10b981; }
+
+    .layer-btn { font-size:11px; padding:3px 10px; border-radius:999px; border:1.5px solid;
+                 cursor:pointer; font-weight:600; transition:all .2s; white-space:nowrap; }
+    .layer-btn.on  { background:#10b981; color:#fff; border-color:#10b981; }
+    .layer-btn.off { background:#fff; color:#6b7280; border-color:#d1d5db; }
+
+    .leaflet-popup-content { font-size:13px; min-width:210px; }
+    .brg-label { background:rgba(255,255,255,.9); border:none; padding:2px 5px;
+                 border-radius:4px; font-size:10px; font-weight:700; white-space:nowrap; }
+
+    #radius-notice {
+        position:absolute; bottom:20px; left:50%; transform:translateX(-50%);
+        background:#1f2937dd; color:#fff; padding:7px 20px; border-radius:999px;
+        font-size:13px; z-index:1000; display:none; pointer-events:none;
+    }
+    #barangay-info {
+        position:absolute; top:12px; right:12px; z-index:1001;
+        background:#fff; border-radius:10px; box-shadow:0 2px 16px rgba(0,0,0,.2);
+        padding:14px 16px; min-width:200px; max-width:220px; display:none;
+    }
+    #source-badge {
+        position:absolute; bottom:6px; right:6px; z-index:1000;
+        font-size:10px; padding:2px 8px; border-radius:999px;
+        background:rgba(255,255,255,.85); border:1px solid #e5e7eb; color:#6b7280;
+    }
+    .tab-btn { flex:1; text-align:center; padding:7px; font-size:12px; font-weight:600;
+               cursor:pointer; border-bottom:2px solid transparent; color:#9ca3af; background:none; border-top:none; border-left:none; border-right:none; }
+
+    /* ── Panel toggle button (mobile) ── */
+    #panel-toggle-btn {
+        display:none;
+        position:absolute; top:10px; left:10px; z-index:1002;
+        background:#fff; border:none; border-radius:9px;
+        box-shadow:0 2px 12px rgba(0,0,0,.22);
+        padding:9px 13px; cursor:pointer;
+        align-items:center; gap:7px;
+        font-size:13px; font-weight:600; color:#374151;
+        white-space:nowrap;
+    }
+    #panel-toggle-btn:hover { background:#f3f4f6; }
+
+    /* ── Tap-away overlay (mobile) ── */
+    #panel-overlay {
+        display:none;
+        position:fixed; inset:0; z-index:9998;
+        background:rgba(0,0,0,.35);
+    }
+
+    /* ── Mobile breakpoint ── */
+    @media(max-width:767px) {
+        #map-panel {
+            position:fixed;
+            top:64px; left:0; bottom:0;
+            width:300px; min-width:0;
+            z-index:9999;
+            transform:translateX(-100%);
+            box-shadow:4px 0 24px rgba(0,0,0,.25);
+        }
+        #map-panel.panel-open { transform:translateX(0); }
+        #panel-overlay.visible { display:block; }
+        #map-container { width:100%; }
+        #panel-toggle-btn { display:flex !important; }
+        #barangay-info { right:8px; top:52px; max-width:calc(100vw - 20px); min-width:0; width:calc(100vw - 20px); z-index:9998; }
+        #source-badge  { bottom:30px; }
+        .leaflet-popup-content { min-width:0; width:200px !important; }
+    }
+
+    /* Ensure Leaflet panes never exceed panel z-index */
+    @media(max-width:767px) {
+        .leaflet-pane,
+        .leaflet-map-pane,
+        .leaflet-tile-pane { z-index:auto !important; }
+    }
+    .tab-btn.active { color:#10b981; border-bottom-color:#10b981; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="map-page-wrapper">
+
+    <!-- ═══════════ LEFT PANEL ═══════════ -->
+    <div id="map-panel">
+
+        <!-- Header -->
+        <div class="px-4 py-3 bg-green-700 text-white flex-shrink-0">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-map-marked-alt text-lg"></i>
+                    <div>
+                        <div class="font-bold text-sm">GIS Farm Map</div>
+                        <div class="text-xs text-green-200">Victoria, Laguna</div>
+                    </div>
+                </div>
+                <span id="boundary-source" class="text-xs bg-green-600 px-2 py-0.5 rounded-full text-green-100"></span>
+                <button id="sat-toggle" onclick="toggleSatellite()"
+                    title="Toggle Satellite imagery"
+                    class="text-xs bg-green-600 hover:bg-green-500 px-2 py-0.5 rounded-full text-green-100 transition flex items-center gap-1">
+                    <i class="fas fa-satellite"></i><span id="sat-label">Satellite</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="grid grid-cols-3 border-b text-center flex-shrink-0">
+            <div class="py-2 border-r">
+                <div class="text-lg font-bold text-gray-800" id="statTotal">–</div>
+                <div class="text-xs text-gray-500">Total</div>
+            </div>
+            <div class="py-2 border-r">
+                <div class="text-lg font-bold text-green-600" id="statMapped">–</div>
+                <div class="text-xs text-gray-500">On Map</div>
+            </div>
+            <div class="py-2">
+                <div class="text-lg font-bold text-orange-500" id="statUnmapped">–</div>
+                <div class="text-xs text-gray-500">No GPS</div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="px-3 py-2 border-b space-y-2 flex-shrink-0">
+            <div class="flex gap-2">
+                <select id="barangayFilter" onchange="applyFilters()"
+                    class="flex-1 text-xs px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500">
+                    <option value="">All Barangays</option>
+                    {% for bid, bname in barangays.items() %}
+                    <option value="{{ bname }}">{{ bname }}</option>
+                    {% endfor %}
+                </select>
+                <select id="typeFilter" onchange="applyFilters()"
+                    class="flex-1 text-xs px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500">
+                    <option value="">All Types</option>
+                </select>
+            </div>
+            <div class="relative">
+                <i class="fas fa-search absolute left-2.5 top-2 text-gray-400 text-xs"></i>
+                <input id="farmSearch" type="text" placeholder="Search farm or owner..."
+                    oninput="applyFilters()"
+                    class="w-full text-xs pl-7 pr-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500" />
+            </div>
+        </div>
+
+        <!-- Layer Toggles -->
+        <div class="px-3 py-2 border-b flex gap-1.5 flex-wrap flex-shrink-0">
+            <button id="btnBoundaries" class="layer-btn on"  onclick="toggleBoundaries()"><i class="fas fa-draw-polygon mr-1"></i>Boundaries</button>
+            <button id="btnLabels"     class="layer-btn on"  onclick="toggleLabels()"><i class="fas fa-tag mr-1"></i>Labels</button>
+            <button id="btnHeatmap"    class="layer-btn off" onclick="toggleHeatmap()"><i class="fas fa-fire mr-1"></i>Heatmap</button>
+            <button id="btnSat"        class="layer-btn off" onclick="toggleSatellite()"><i class="fas fa-satellite mr-1"></i>Satellite</button>
+        </div>
+
+        <!-- Radius Search -->
+        <div class="px-3 py-2 border-b flex-shrink-0">
+            <div class="text-xs font-semibold text-gray-500 uppercase mb-1.5">Radius Search</div>
+            <div class="flex gap-1 items-center">
+                <input id="radiusKm" type="number" min="0.1" max="20" step="0.1" value="1"
+                    class="w-16 text-xs px-2 py-1.5 border rounded-lg border-gray-300 focus:outline-none" />
+                <span class="text-xs text-gray-400">km</span>
+                <button onclick="enableRadiusDraw()"
+                    class="flex-1 text-xs bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-2 rounded-lg font-semibold">
+                    <i class="fas fa-crosshairs mr-1"></i>Click Map
+                </button>
+                <button id="clearRadiusBtn" onclick="clearRadius()"
+                    class="hidden text-xs bg-red-100 hover:bg-red-200 text-red-600 py-1.5 px-2 rounded-lg font-semibold">✕</button>
+            </div>
+            <div id="radiusInfo" class="hidden text-xs text-blue-600 mt-1.5 font-medium"></div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex border-b flex-shrink-0">
+            <button class="tab-btn active" id="tabFarms"     onclick="switchTab('farms')">Farms</button>
+            <button class="tab-btn"        id="tabBarangays" onclick="switchTab('barangays')">Barangays</button>
+        </div>
+
+        <!-- Tab Panes -->
+        <div class="flex-1 overflow-y-auto">
+            <div id="paneFarms">
+                <div id="farmListContainer" class="divide-y divide-gray-100">
+                    <div class="p-4 text-sm text-gray-400 text-center">
+                        <i class="fas fa-spinner fa-spin mr-1"></i>Loading farms...
+                    </div>
+                </div>
+            </div>
+            <div id="paneBarangays" class="hidden divide-y divide-gray-100"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════ MAP ═══════════ -->
+    <div id="map-container">
+        <div id="map"></div>
+
+        <!-- Mobile panel toggle -->
+        <button id="panel-toggle-btn" onclick="togglePanel()">
+            <i class="fas fa-bars text-green-700"></i>
+            <span>Filters &amp; List</span>
+        </button>
+
+        <div id="radius-notice">
+            <i class="fas fa-crosshairs mr-2"></i>Click anywhere to place the radius circle
+        </div>
+
+        <!-- Barangay click-info card -->
+        <div id="barangay-info">
+            <div class="flex justify-between items-start mb-2">
+                <div class="font-bold text-gray-900 text-sm" id="bi-name">–</div>
+                <button onclick="closeBarangayInfo()" class="text-gray-400 hover:text-gray-600 text-lg leading-none ml-3">×</button>
+            </div>
+            <div class="text-xs text-gray-600 space-y-1">
+                <div class="flex justify-between"><span class="text-gray-400">Farms</span><span class="font-semibold" id="bi-farms">–</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Livestock</span><span class="font-semibold" id="bi-livestock">–</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Crops</span><span class="font-semibold" id="bi-crops">–</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Total Area</span><span class="font-semibold" id="bi-area">–</span></div>
+            </div>
+            <button onclick="filterByBarangayCard()"
+                class="mt-3 w-full text-xs bg-green-600 hover:bg-green-700 text-white py-1.5 rounded-lg font-semibold">
+                <i class="fas fa-filter mr-1"></i>Filter to this barangay
+            </button>
+        </div>
+
+        <div id="source-badge"></div>
+    </div>
+
+    <!-- Tap-away overlay (mobile) -->
+    <div id="panel-overlay" onclick="closePanel()"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script>
+// ── Constants ─────────────────────────────────────────────────────────────────
+const VICTORIA_CENTER = [14.2270, 121.3281];
+const VICTORIA_BOUNDS = [[14.1824, 121.2974],[14.2650, 121.3718]];
+
+const BCOLOR = {
+    'Banca-Banca':'#e74c3c',   'Daniw':'#e67e22',       'Masapang':'#c9a000',
+    'Nanhaya':'#27ae60',        'Pagalangan':'#16a085',  'San Benito':'#2980b9',
+    'San Felix':'#8e44ad',      'San Francisco':'#c0392b','San Roque':'#795548'
+};
+function bColor(name) { return BCOLOR[name] || '#6b7280'; }
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let allMapped   = [];
+let allUnmapped = [];
+let markerMap   = {};
+let lotMap      = {};
+let boundaryLayers = {};
+let labelLayers    = {};
+let heatLayer      = null;
+let radiusCircle   = null;
+let drawingRadius  = false;
+let boundariesOn   = true;
+let labelsOn       = true;
+let heatmapOn      = false;
+let satelliteOn    = false;
+let selectedBarangay = null;
+
+// ── Map init ─────────────────────────────────────────────────────────────────
+const osmTile = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© <a href="https://www.openstreetmap.org/">OpenStreetMap</a>', maxZoom:19
+});
+const satTile = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{
+    attribution:'© Esri World Imagery', maxZoom:19
+});
+
+let satActive = false;
+function toggleSatellite() {
+    satActive = !satActive;
+    if (satActive) {
+        map.removeLayer(osmTile);
+        satTile.addTo(map);
+        document.getElementById('sat-toggle').classList.remove('bg-green-600','hover:bg-green-500');
+        document.getElementById('sat-toggle').classList.add('bg-yellow-500','hover:bg-yellow-400','text-gray-900');
+        document.getElementById('sat-label').textContent = 'Street Map';
+    } else {
+        map.removeLayer(satTile);
+        osmTile.addTo(map);
+        document.getElementById('sat-toggle').classList.remove('bg-yellow-500','hover:bg-yellow-400','text-gray-900');
+        document.getElementById('sat-toggle').classList.add('bg-green-600','hover:bg-green-500');
+        document.getElementById('sat-label').textContent = 'Satellite';
+    }
+}
+
+const map = L.map('map',{ center:VICTORIA_CENTER, zoom:14, layers:[osmTile] });
+map.fitBounds(VICTORIA_BOUNDS, { padding:[20,20] });
+
+// ── Load boundaries ───────────────────────────────────────────────────────────
+fetch('/farm/api/barangay-boundaries')
+    .then(r => r.json())
+    .then(geojson => {
+        const src = geojson.source === 'osm' ? 'OSM ✓' : 'Approximate';
+        document.getElementById('boundary-source').textContent = src;
+        document.getElementById('source-badge').textContent = 'Boundary data: ' + src;
+
+        geojson.features.forEach(f => {
+            const name  = f.properties.name;
+            const color = bColor(name);
+
+            const layer = L.geoJSON(f, {
+                style:{
+                    color, weight:2, fillColor:color,
+                    fillOpacity:0.10, dashArray:'6 4'
+                }
+            });
+
+            layer.on('mouseover', function() {
+                if (!selectedBarangay || selectedBarangay !== name)
+                    this.setStyle({ fillOpacity:0.25, weight:3 });
+            });
+            layer.on('mouseout', function() {
+                if (!selectedBarangay || selectedBarangay !== name)
+                    this.setStyle({ fillOpacity:0.10, weight:2 });
+            });
+            layer.on('click', function() {
+                showBarangayInfo(name);
+            });
+
+            layer.addTo(map);
+            boundaryLayers[name] = layer;
+
+            // Permanent label at polygon centroid
+            try {
+                const c = layer.getBounds().getCenter();
+                const lbl = L.marker(c, {
+                    icon: L.divIcon({
+                        className:'',
+                        html:`<div class="brg-label" style="color:${color}">${name}</div>`,
+                        iconAnchor:[0,0]
+                    }),
+                    interactive:false, zIndexOffset:-100
+                }).addTo(map);
+                labelLayers[name] = lbl;
+            } catch(e) {}
+        });
+
+        buildBarangayPane();
+    })
+    .catch(e => console.warn('Boundary load failed:', e));
+
+// ── Load farm data ────────────────────────────────────────────────────────────
+fetch('/farm/api/geojson')
+    .then(r => r.json())
+    .then(data => {
+        allMapped   = data.features || [];
+        allUnmapped = data.unmapped  || [];
+
+        document.getElementById('statTotal').textContent    = data.total_farms    ?? 0;
+        document.getElementById('statMapped').textContent   = data.mapped_farms   ?? 0;
+        document.getElementById('statUnmapped').textContent = data.unmapped_farms ?? 0;
+
+        // Populate crop type filter
+        const types = [...new Set([
+            ...allMapped.map(f => f.properties.crop_type),
+            ...allUnmapped.map(p => p.crop_type)
+        ].filter(Boolean))].sort();
+        const sel = document.getElementById('typeFilter');
+        types.forEach(t => {
+            const o = document.createElement('option');
+            o.value = t; o.textContent = t; sel.appendChild(o);
+        });
+
+        allMapped.forEach(f => {
+            const lotLayer = makeLotLayer(f);
+            if (lotLayer) {
+                lotLayer.addTo(map);
+                lotMap[f.properties.id] = lotLayer;
+            }
+
+            const m = makeMarker(f);
+            if (m) {
+                m.addTo(map);
+                markerMap[f.properties.id] = m;
+            }
+        });
+
+        buildFarmList(allMapped, allUnmapped);
+        buildHeatLayer(allMapped);
+    })
+    .catch(e => {
+        console.error('Farm load error:', e);
+        document.getElementById('farmListContainer').innerHTML =
+            '<div class="p-4 text-red-500 text-sm">Error loading farms.</div>';
+    });
+
+// ── Marker factory ────────────────────────────────────────────────────────────
+function makeMarker(feature) {
+    const p = feature.properties;
+    const center = featureCenterLatLng(feature.geometry);
+    if (!center) {
+        return null;
+    }
+    const lat = center[0];
+    const lng = center[1];
+    p.lat = lat;
+    p.lng = lng;
+    const color = bColor(p.barangay);
+
+    const icon = L.divIcon({
+        className:'',
+        html:`<div style="width:13px;height:13px;background:${color};border-radius:50%;border:2.5px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.45)"></div>`,
+        iconSize:[13,13], iconAnchor:[6,6]
+    });
+
+    const marker = L.marker([lat,lng], {icon});
+    marker.bindPopup(buildPopup(p), {maxWidth:280});
+    marker.on('click', () => highlightItem(p.id));
+    marker.farmId    = p.id;
+    marker.farmProps = p;
+    return marker;
+}
+
+function makeLotLayer(feature) {
+    const g = feature.geometry;
+    if (!g || (g.type !== 'Polygon' && g.type !== 'MultiPolygon')) {
+        return null;
+    }
+
+    const color = bColor(feature.properties.barangay);
+    return L.geoJSON(feature, {
+        style: {
+            color,
+            weight: 2,
+            fillColor: color,
+            fillOpacity: 0.14
+        }
+    });
+}
+
+function featureCenterLatLng(geometry) {
+    if (!geometry) {
+        return null;
+    }
+
+    if (geometry.type === 'Point') {
+        const coords = geometry.coordinates;
+        return [coords[1], coords[0]];
+    }
+
+    if (geometry.type === 'Polygon' || geometry.type === 'MultiPolygon') {
+        try {
+            const layer = L.geoJSON({ type: 'Feature', geometry: geometry, properties: {} });
+            return [layer.getBounds().getCenter().lat, layer.getBounds().getCenter().lng];
+        } catch (e) {
+            return null;
+        }
+    }
+
+    return null;
+}
+
+function buildPopup(p) {
+    const color = bColor(p.barangay);
+    return `<div style="font-family:system-ui,sans-serif">
+        <div style="font-weight:700;font-size:14px;margin-bottom:5px">${p.name}</div>
+        <span style="background:${color}22;color:${color};padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600">${p.barangay}</span>
+        <table style="font-size:12px;width:100%;margin-top:9px;border-collapse:collapse">
+            <tr><td style="color:#6b7280;padding:2px 0;white-space:nowrap">Owner</td><td style="font-weight:600;padding-left:10px">${p.owner}</td></tr>
+            <tr><td style="color:#6b7280;padding:2px 0">Type</td><td style="padding-left:10px">${p.crop_type}</td></tr>
+            <tr><td style="color:#6b7280;padding:2px 0">Area</td><td style="padding-left:10px">${p.area_sqm ? Number(p.area_sqm).toLocaleString()+' m²':'N/A'}</td></tr>
+            <tr><td style="color:#6b7280;padding:2px 0">Livestock</td><td style="padding-left:10px">${p.livestock_count} head</td></tr>
+            <tr><td style="color:#6b7280;padding:2px 0">Crops</td><td style="padding-left:10px">${p.crop_count} records</td></tr>
+        </table>
+        <a href="${p.url}" style="display:block;margin-top:10px;text-align:center;background:#10b981;color:#fff;padding:6px;border-radius:7px;font-size:12px;font-weight:600;text-decoration:none">
+            View Farm Details →
+        </a>
+        <a href="https://www.google.com/maps?q=${p.lat},${p.lng}&ll=${p.lat},${p.lng}&z=18" target="_blank" rel="noopener"
+           style="display:block;margin-top:6px;text-align:center;background:#4285F4;color:#fff;padding:6px;border-radius:7px;font-size:12px;font-weight:600;text-decoration:none">
+            📍 Open in Google Maps
+        </a>
+    </div>`;
+}
+
+// ── Farm list ─────────────────────────────────────────────────────────────────
+function buildFarmList(mapped, unmapped) {
+    const c = document.getElementById('farmListContainer');
+    c.innerHTML = '';
+    if (!mapped.length && !unmapped.length) {
+        c.innerHTML = '<div class="p-4 text-sm text-gray-400 text-center">No farms match the current filter.</div>';
+        return;
+    }
+    mapped.forEach(f  => c.appendChild(makeFarmItem(f.properties, true)));
+    if (unmapped.length) {
+        const hdr = document.createElement('div');
+        hdr.className = 'px-3 py-1.5 bg-orange-50 border-y border-orange-100 text-xs font-semibold text-orange-600';
+        hdr.innerHTML = `<i class="fas fa-map-marker-alt mr-1"></i>${unmapped.length} farm(s) without GPS — click to open detail`;
+        c.appendChild(hdr);
+        unmapped.forEach(p => c.appendChild(makeFarmItem(p, false)));
+    }
+}
+
+function makeFarmItem(p, hasloc) {
+    const color = bColor(p.barangay);
+    const div   = document.createElement('div');
+    div.className = 'farm-item px-3 py-2' + (hasloc ? '' : ' opacity-70');
+    div.id = `li-${p.id}`;
+    div.innerHTML = `<div class="flex items-start gap-2">
+        <span style="width:9px;height:9px;background:${color};border-radius:50%;margin-top:4px;flex-shrink:0;display:inline-block"></span>
+        <div class="flex-1 min-w-0">
+            <div class="text-xs font-semibold text-gray-800 truncate">${p.name}</div>
+            <div class="text-xs text-gray-500">${p.barangay} · ${p.crop_type}</div>
+            <div class="text-xs text-gray-400">${p.livestock_count} livestock · ${p.crop_count} crops</div>
+        </div>
+        <i class="fas fa-map-marker-alt text-xs mt-1 flex-shrink-0 ${hasloc ? 'text-green-400' : 'text-orange-400'}" title="${hasloc ? 'Has GPS' : 'No GPS'}"></i>
+    </div>`;
+    div.onclick = hasloc ? () => flyToFarm(p.id) : () => window.location.href = p.url;
+    return div;
+}
+
+function highlightItem(id) {
+    document.querySelectorAll('.farm-item').forEach(e => e.classList.remove('active'));
+    const el = document.getElementById(`li-${id}`);
+    if (el) { el.classList.add('active'); el.scrollIntoView({block:'nearest',behavior:'smooth'}); }
+}
+
+function flyToFarm(id) {
+    const m = markerMap[id];
+    if (!m) return;
+    if (window.innerWidth < 768) closePanel();
+    map.flyTo(m.getLatLng(), 17, {duration:0.7});
+    setTimeout(() => m.openPopup(), 750);
+    highlightItem(id);
+}
+
+// ── Barangay info card ────────────────────────────────────────────────────────
+function showBarangayInfo(name) {
+    selectedBarangay = name;
+
+    // Collate stats
+    const allProps = [
+        ...allMapped.map(f => f.properties).filter(p => p.barangay === name),
+        ...allUnmapped.filter(p => p.barangay === name)
+    ];
+    const livestock = allProps.reduce((s,p) => s+(p.livestock_count||0), 0);
+    const crops     = allProps.reduce((s,p) => s+(p.crop_count||0), 0);
+    const area      = allProps.reduce((s,p) => s+(p.area_sqm||0), 0);
+
+    document.getElementById('bi-name').textContent      = name;
+    document.getElementById('bi-farms').textContent     = allProps.length;
+    document.getElementById('bi-livestock').textContent = livestock;
+    document.getElementById('bi-crops').textContent     = crops;
+    document.getElementById('bi-area').textContent      = area ? Number(area).toLocaleString()+' m²' : 'N/A';
+    document.getElementById('barangay-info').style.display = 'block';
+
+    // Highlight this boundary, dim others
+    Object.entries(boundaryLayers).forEach(([n, l]) => {
+        l.setStyle(n === name
+            ? {fillOpacity:0.30, weight:3.5, dashArray:null}
+            : {fillOpacity:0.05, weight:1, dashArray:'6 4'});
+    });
+}
+
+function closeBarangayInfo() {
+    selectedBarangay = null;
+    document.getElementById('barangay-info').style.display = 'none';
+    // Restore all boundaries
+    applyFilters();
+}
+
+function filterByBarangayCard() {
+    if (!selectedBarangay) return;
+    document.getElementById('barangayFilter').value = selectedBarangay;
+    switchTab('farms');
+    applyFilters();
+}
+
+// ── Barangay summary pane ─────────────────────────────────────────────────────
+function buildBarangayPane() {
+    const pane = document.getElementById('paneBarangays');
+    pane.innerHTML = '';
+    Object.keys(BCOLOR).forEach(name => {
+        const color = bColor(name);
+        const farms = [
+            ...allMapped.map(f => f.properties).filter(p => p.barangay === name),
+            ...allUnmapped.filter(p => p.barangay === name)
+        ];
+        const livestock = farms.reduce((s,p) => s+(p.livestock_count||0), 0);
+        const div = document.createElement('div');
+        div.className = 'farm-item px-3 py-2 cursor-pointer border-b border-gray-100';
+        div.innerHTML = `<div class="flex items-center gap-2">
+            <span style="width:10px;height:10px;background:${color};border-radius:3px;flex-shrink:0;display:inline-block"></span>
+            <div class="flex-1 min-w-0">
+                <div class="text-xs font-semibold text-gray-800">${name}</div>
+                <div class="text-xs text-gray-500">${farms.length} farm(s) · ${livestock} livestock</div>
+            </div>
+            <i class="fas fa-chevron-right text-xs text-gray-300 flex-shrink-0"></i>
+        </div>`;
+        div.onclick = () => {
+            switchTab('farms');
+            document.getElementById('barangayFilter').value = name;
+            applyFilters();
+            showBarangayInfo(name);
+            if (boundaryLayers[name]) map.fitBounds(boundaryLayers[name].getBounds(), {padding:[40,40]});
+        };
+        pane.appendChild(div);
+    });
+}
+
+// ── Filters ───────────────────────────────────────────────────────────────────
+function applyFilters() {
+    const selB   = document.getElementById('barangayFilter').value;   // exact case
+    const selT   = document.getElementById('typeFilter').value;
+    const search = document.getElementById('farmSearch').value.toLowerCase().trim();
+
+    function matches(p) {
+        return (!selB   || p.barangay  === selB)
+            && (!selT   || p.crop_type === selT)
+            && (!search || p.name.toLowerCase().includes(search)
+                        || p.owner.toLowerCase().includes(search));
+    }
+
+    // Update map markers
+    allMapped.forEach(f => {
+        const m = markerMap[f.properties.id];
+        const l = lotMap[f.properties.id];
+        if (m) {
+            matches(f.properties) ? m.addTo(map) : map.removeLayer(m);
+        }
+        if (l) {
+            matches(f.properties) ? l.addTo(map) : map.removeLayer(l);
+        }
+    });
+
+    // Update boundary highlight based on filter
+    if (!selectedBarangay) {
+        Object.entries(boundaryLayers).forEach(([name, layer]) => {
+            layer.setStyle(!selB || name === selB
+                ? {fillOpacity:0.12, weight:2, dashArray:'6 4'}
+                : {fillOpacity:0.04, weight:1, dashArray:'6 4'});
+        });
+    }
+
+    const visMapped   = allMapped.filter(f => matches(f.properties));
+    const visUnmapped = allUnmapped.filter(p => matches(p));
+    buildFarmList(visMapped, visUnmapped);
+
+    document.getElementById('statMapped').textContent   = visMapped.length;
+    document.getElementById('statUnmapped').textContent = visUnmapped.length;
+    document.getElementById('statTotal').textContent    = visMapped.length + visUnmapped.length;
+}
+
+// ── Layer toggles ─────────────────────────────────────────────────────────────
+function setBtn(id, on) {
+    document.getElementById(id).className = 'layer-btn ' + (on ? 'on' : 'off');
+}
+
+function toggleBoundaries() {
+    boundariesOn = !boundariesOn;
+    Object.values(boundaryLayers).forEach(l => boundariesOn ? l.addTo(map) : map.removeLayer(l));
+    setBtn('btnBoundaries', boundariesOn);
+}
+
+function toggleLabels() {
+    labelsOn = !labelsOn;
+    Object.values(labelLayers).forEach(l => labelsOn ? l.addTo(map) : map.removeLayer(l));
+    setBtn('btnLabels', labelsOn);
+}
+
+function buildHeatLayer(features) {
+    const pts = features
+        .map(f => featureCenterLatLng(f.geometry))
+        .filter(Boolean)
+        .map(c => [c[0], c[1], 1]);
+    if (heatLayer && map.hasLayer(heatLayer)) map.removeLayer(heatLayer);
+    heatLayer = L.heatLayer(pts, {radius:40, blur:30, maxZoom:17});
+}
+
+function toggleHeatmap() {
+    heatmapOn = !heatmapOn;
+    if (heatmapOn && heatLayer) heatLayer.addTo(map);
+    else if (heatLayer) map.removeLayer(heatLayer);
+    setBtn('btnHeatmap', heatmapOn);
+}
+
+function toggleSatellite() {
+    satelliteOn = !satelliteOn;
+    if (satelliteOn) { map.removeLayer(osmTile); satTile.addTo(map); }
+    else             { map.removeLayer(satTile); osmTile.addTo(map); }
+    setBtn('btnSat', satelliteOn);
+}
+
+// ── Radius search ─────────────────────────────────────────────────────────────
+function enableRadiusDraw() {
+    drawingRadius = true;
+    document.getElementById('radius-notice').style.display = 'block';
+    map.getContainer().style.cursor = 'crosshair';
+}
+
+map.on('click', function(e) {
+    if (!drawingRadius) return;
+    drawingRadius = false;
+    document.getElementById('radius-notice').style.display = 'none';
+    map.getContainer().style.cursor = '';
+
+    if (radiusCircle) map.removeLayer(radiusCircle);
+    const km = parseFloat(document.getElementById('radiusKm').value) || 1;
+    radiusCircle = L.circle(e.latlng, {
+        radius: km*1000, color:'#3b82f6', weight:2.5,
+        fillColor:'#3b82f6', fillOpacity:0.08, dashArray:'8 5'
+    }).addTo(map);
+
+    document.getElementById('barangayFilter').value = '';
+    document.getElementById('typeFilter').value     = '';
+    document.getElementById('farmSearch').value     = '';
+
+    const center = e.latlng;
+    const inCircle = allMapped.filter(f => {
+        const c = featureCenterLatLng(f.geometry);
+        if (!c) return false;
+        return map.distance(center, L.latLng(c[0], c[1])) <= km*1000;
+    });
+
+    allMapped.forEach(f => {
+        const c = featureCenterLatLng(f.geometry);
+        const m = markerMap[f.properties.id];
+        const l = lotMap[f.properties.id];
+        if (!c) return;
+        const inside = map.distance(center, L.latLng(c[0], c[1])) <= km*1000;
+        if (m) {
+            inside ? m.addTo(map) : map.removeLayer(m);
+        }
+        if (l) {
+            inside ? l.addTo(map) : map.removeLayer(l);
+        }
+    });
+
+    buildFarmList(inCircle, []);
+    document.getElementById('statMapped').textContent   = inCircle.length;
+    document.getElementById('statUnmapped').textContent = '—';
+    document.getElementById('statTotal').textContent    = inCircle.length;
+    document.getElementById('radiusInfo').textContent   = `${inCircle.length} farm(s) within ${km} km`;
+    document.getElementById('radiusInfo').classList.remove('hidden');
+    document.getElementById('clearRadiusBtn').classList.remove('hidden');
+});
+
+function clearRadius() {
+    if (radiusCircle) { map.removeLayer(radiusCircle); radiusCircle = null; }
+    document.getElementById('radiusInfo').classList.add('hidden');
+    document.getElementById('clearRadiusBtn').classList.add('hidden');
+    applyFilters();
+}
+
+// ── Mobile panel drawer ──────────────────────────────────────────────────────
+function togglePanel() {
+    const panel   = document.getElementById('map-panel');
+    const overlay = document.getElementById('panel-overlay');
+    const isOpen  = panel.classList.contains('panel-open');
+    if (isOpen) { closePanel(); }
+    else {
+        panel.classList.add('panel-open');
+        overlay.classList.add('visible');
+        setTimeout(() => map.invalidateSize(), 260);
+    }
+}
+function closePanel() {
+    document.getElementById('map-panel').classList.remove('panel-open');
+    document.getElementById('panel-overlay').classList.remove('visible');
+    setTimeout(() => map.invalidateSize(), 260);
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+    document.getElementById('paneFarms').classList.toggle('hidden',     tab !== 'farms');
+    document.getElementById('paneBarangays').classList.toggle('hidden', tab !== 'barangays');
+    document.getElementById('tabFarms').classList.toggle('active',     tab === 'farms');
+    document.getElementById('tabBarangays').classList.toggle('active', tab === 'barangays');
+}
+</script>
+{% endblock %}

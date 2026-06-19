@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Direct Orders - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">
+            <i class="fas fa-inbox text-blue-600 mr-3"></i>Direct Supply Orders
+        </h1>
+        <p class="text-gray-600">Farmers who submitted orders directly to the municipal office</p>
+    </div>
+
+    <!-- Status Tabs -->
+    <div class="flex gap-2 mb-6 flex-wrap">
+        {% for tab_status, tab_label in [('pending','Pending'), ('ready_to_claim','Ready to Claim'), ('claimed','Claimed'), ('rejected','Rejected')] %}
+        <a href="{{ url_for('distribution.admin_direct_requests', status=tab_status) }}"
+           class="px-4 py-2 rounded-lg text-sm font-semibold transition
+           {% if status_filter == tab_status %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+            {{ tab_label }}
+        </a>
+        {% endfor %}
+    </div>
+
+    {% if requests %}
+    <div class="space-y-6">
+        {% for req in requests %}
+        <div class="card p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                <!-- Left -->
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900">{{ req.supply_name }}</h3>
+                    <span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-semibold mt-1">
+                        {{ supply_types.get(req.supply_type, req.supply_type) }}
+                    </span>
+                    <div class="mt-3 text-sm text-gray-700 space-y-1">
+                        <p><span class="font-semibold">Farmer:</span> {{ req.requested_by.full_name }}</p>
+                        <p><span class="font-semibold">Farm:</span> {{ req.farm.name }} ({{ req.farm.barangay_name }})</p>
+                        <p><span class="font-semibold">Quantity:</span> {{ req.quantity_requested }} {{ req.unit }}</p>
+                        <p><span class="font-semibold">Submitted:</span> {{ req.created_at.strftime('%b %d, %Y') }}</p>
+                        {% if req.reason %}
+                        <p><span class="font-semibold">Reason:</span> {{ req.reason }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Right: status + actions -->
+                <div>
+                    <div class="mb-4">
+                        {% if req.status == 'pending' %}
+                            <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-semibold">
+                                <i class="fas fa-clock mr-1"></i>Pending Review
+                            </span>
+                        {% elif req.status == 'ready_to_claim' %}
+                            <span class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-semibold">
+                                <i class="fas fa-bell mr-1"></i>Ready to Claim
+                            </span>
+                            <div class="mt-3 bg-indigo-50 border border-indigo-200 rounded-lg p-3 text-sm">
+                                <p><span class="font-semibold text-indigo-700">Claim Code:</span>
+                                   <span class="font-mono font-bold text-indigo-900 text-lg">{{ req.claim_code }}</span></p>
+                                <p class="mt-1"><span class="font-semibold text-indigo-700">Location:</span> {{ req.claim_location }}</p>
+                                <p class="mt-1"><span class="font-semibold text-indigo-700">Deadline:</span> {{ req.claim_deadline.strftime('%b %d, %Y') }}</p>
+                            </div>
+                        {% elif req.status == 'claimed' %}
+                            <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
+                                <i class="fas fa-check-circle mr-1"></i>Claimed
+                            </span>
+                        {% elif req.status == 'rejected' %}
+                            <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-semibold">
+                                <i class="fas fa-times-circle mr-1"></i>Rejected
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Actions -->
+                    {% if req.status == 'pending' %}
+                    <div class="bg-gray-50 border rounded-lg p-4">
+                        <p class="text-sm font-semibold text-gray-700 mb-3">Approve &amp; Set Pickup Details</p>
+                        <form method="POST" action="{{ url_for('distribution.admin_approve_direct_request', req_id=req.id) }}" class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">Pickup Location *</label>
+                                <input type="text" name="claim_location" class="form-input w-full text-sm"
+                                       placeholder="e.g., Municipal Hall, Room 2" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">Claim Deadline *</label>
+                                <input type="date" name="claim_deadline" class="form-input w-full text-sm" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">Notes (optional)</label>
+                                <input type="text" name="admin_notes" class="form-input w-full text-sm"
+                                       placeholder="Additional instructions...">
+                            </div>
+                            <div class="flex gap-2">
+                                <button type="submit" class="btn-success text-sm px-4 py-2">
+                                    <i class="fas fa-check mr-1"></i>Approve
+                                </button>
+                                <button type="button" onclick="toggleRejectForm({{ req.id }})"
+                                        class="btn-danger text-sm px-4 py-2">
+                                    <i class="fas fa-times mr-1"></i>Reject
+                                </button>
+                            </div>
+                        </form>
+                        <div id="rejectForm{{ req.id }}" class="hidden mt-3">
+                            <form method="POST" action="{{ url_for('distribution.admin_reject_direct_request', req_id=req.id) }}" class="space-y-2">
+                                <input type="text" name="admin_notes" class="form-input w-full text-sm"
+                                       placeholder="Rejection reason..." required>
+                                <button type="submit" class="btn-danger text-sm px-4 py-2">
+                                    Confirm Rejection
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% elif req.status == 'ready_to_claim' %}
+                    <form method="POST" action="{{ url_for('distribution.admin_mark_direct_claimed', req_id=req.id) }}" class="mt-3">
+                        <button type="submit" class="btn-success text-sm px-4 py-2"
+                                onclick="return confirm('Mark this as claimed by the farmer?')">
+                            <i class="fas fa-handshake mr-1"></i>Mark as Claimed
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card p-12 text-center">
+        <div class="text-6xl text-gray-300 mb-4"><i class="fas fa-inbox"></i></div>
+        <h3 class="text-xl font-semibold text-gray-700 mb-2">No Requests</h3>
+        <p class="text-gray-500">No direct requests with status "{{ status_filter }}"</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function toggleRejectForm(id) {
+    const form = document.getElementById('rejectForm' + id);
+    form.classList.toggle('hidden');
+}
+</script>
+
+<style>
+.form-input { width:100%; padding:0.5rem 0.75rem; border:1px solid #d1d5db; border-radius:0.5rem; font-size:0.875rem; }
+.form-input:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 2px rgba(59,130,246,0.3); }
+.btn-success { background:#15803d; color:#fff; border-radius:0.5rem; font-weight:600; border:none; cursor:pointer; display:inline-flex; align-items:center; transition:background 0.2s; }
+.btn-success:hover { background:#166534; }
+.btn-danger { background:#dc2626; color:#fff; border-radius:0.5rem; font-weight:600; border:none; cursor:pointer; display:inline-flex; align-items:center; transition:background 0.2s; }
+.btn-danger:hover { background:#b91c1c; }
+</style>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Register Animal - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <a href="{{ url_for('livestock.list_livestock') }}" class="text-green-600 hover:text-green-700 mb-4 inline-block">
+                <i class="fas fa-arrow-left"></i> Back to Livestock
+            </a>
+            <h1 class="text-3xl font-bold text-gray-900"><i class="fas fa-plus-circle text-green-600 mr-2"></i>Register New Animal</h1>
+            <p class="text-gray-600 mt-2">Farm: <strong>{{ farm.name }}</strong></p>
+        </div>
+
+        <!-- Form -->
+        <form method="POST" action="{{ url_for('livestock.create_livestock', farm_id=farm.id) }}" class="card p-6 md:p-8">
+            <div class="space-y-6">
+                <!-- Basic Information -->
+                <div class="border-b pb-6">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4">Animal Information</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Animal Type *</label>
+                            <select name="animal_type" class="form-input" required>
+                                <option value="">Select animal type</option>
+                                {% for type_key, type_name in animal_types.items() %}
+                                <option value="{{ type_key }}">{{ type_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Breed</label>
+                            <input type="text" name="breed" class="form-input" placeholder="e.g., Holstein Friesian">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">ID/Tag Number</label>
+                            <input type="text" name="unique_id" class="form-input" placeholder="e.g., TAG-001">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Gender</label>
+                            <select name="gender" class="form-input">
+                                <option value="">Not specified</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Count</label>
+                            <input type="number" name="count" class="form-input" value="1" min="1">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Physical Information -->
+                <div class="border-b pb-6">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4">Physical Information</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Age (months)</label>
+                            <input type="number" name="age_months" class="form-input" min="0" placeholder="Age in months">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Weight (kg)</label>
+                            <input type="number" name="weight_kg" class="form-input" step="0.1" min="0" placeholder="Weight in kilograms">
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Location on Farm</label>
+                            <input type="text" name="location_description" class="form-input" placeholder="e.g., Barn A, Pen 3, Pasture B">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Acquisition Information -->
+                <div class="border-b pb-6">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4">Acquisition Information</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Acquisition Date *</label>
+                            <input type="date" name="acquisition_date" class="form-input" required>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Acquisition Cost (₱)</label>
+                            <input type="number" name="acquisition_cost" class="form-input" step="0.01" min="0" placeholder="Cost in Philippine Pesos">
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Source</label>
+                            <input type="text" name="source" class="form-input" placeholder="e.g., Local market, Breeder, Farm">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Notes -->
+                <div>
+                    <h2 class="text-lg font-bold text-gray-800 mb-4">Additional Notes</h2>
+                    <textarea name="notes" rows="4" class="form-input" placeholder="Any additional information about this animal..."></textarea>
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex gap-4 pt-6 border-t">
+                    <a href="{{ url_for('livestock.list_livestock') }}" class="btn-secondary flex-1 text-center">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn-primary flex-1 flex items-center justify-center gap-2">
+                        <i class="fas fa-save"></i> Register Animal
+                    </button>
+                </div>
+            </div>
+        </form>
+</div>
+{% endblock %}

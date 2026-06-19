@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}System Settings - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Header -->
+    <div class="mb-12">
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">
+            <i class="fas fa-cog text-gray-600 mr-3"></i>System Settings
+        </h1>
+        <p class="text-gray-600">Complete system configuration and monitoring</p>
+    </div>
+
+    <!-- System Overview -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-12">
+        <div class="card p-6">
+            <p class="text-gray-600 text-sm">Active Farms</p>
+            <p class="text-3xl font-bold text-green-600 mt-2">{{ active_farms }}</p>
+        </div>
+        <div class="card p-6">
+            <p class="text-gray-600 text-sm">Active Users</p>
+            <p class="text-3xl font-bold text-blue-600 mt-2">{{ active_users }}</p>
+        </div>
+        <div class="card p-6">
+            <p class="text-gray-600 text-sm">Total Area</p>
+            <p class="text-3xl font-bold text-yellow-600 mt-2">{{ "%.0f"|format(total_area) }} m²</p>
+        </div>
+        <div class="card p-6">
+            <p class="text-gray-600 text-sm">System Status</p>
+            <p class="text-3xl font-bold text-green-600 mt-2">
+                <i class="fas fa-check-circle"></i>
+            </p>
+        </div>
+    </div>
+
+    <!-- System Configuration -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+        <!-- Application Settings -->
+        <div class="lg:col-span-2">
+            <div class="card p-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-sliders-h text-blue-600 mr-3"></i>Application Settings
+                </h2>
+                
+                <form method="POST" class="space-y-6">
+                    <!-- General Settings -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">General</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">
+                                    <i class="fas fa-city text-blue-600 mr-2"></i>Municipality Name
+                                </label>
+                                <input type="text" value="Victoria, Laguna" disabled class="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded-lg border border-gray-200 cursor-not-allowed">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">
+                                    <i class="fas fa-users text-green-600 mr-2"></i>Administrator Email
+                                </label>
+                                <input type="email" value="admin@agrisearch.local" disabled class="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded-lg border border-gray-200 cursor-not-allowed">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security Settings -->
+                    <div class="border-t pt-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-lock text-red-600 mr-2"></i>Security
+                        </h3>
+                        <div class="space-y-3">
+                            <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                                <input type="checkbox" class="w-4 h-4 rounded" checked>
+                                <span class="text-gray-900 font-medium">Enforce password complexity</span>
+                            </label>
+                            <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                                <input type="checkbox" class="w-4 h-4 rounded" checked>
+                                <span class="text-gray-900 font-medium">Enable two-factor authentication</span>
+                            </label>
+                            <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                                <input type="checkbox" class="w-4 h-4 rounded" checked>
+                                <span class="text-gray-900 font-medium">Log all admin actions</span>
+                            </label>
+                            <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                                <input type="checkbox" class="w-4 h-4 rounded" checked>
+                                <span class="text-gray-900 font-medium">SSL/TLS encryption enabled</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Email Notifications -->
+                    <div class="border-t pt-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-bell text-yellow-600 mr-2"></i>Notifications & Alerts
+                        </h3>
+                        <div class="space-y-3">
+                            <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                                <input type="checkbox" class="w-4 h-4 rounded" checked>
+                                <span class="text-gray-900 font-medium">Email alerts for new farm registrations</span>
+                            </label>
+                            <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                                <input type="checkbox" class="w-4 h-4 rounded" checked>
+                                <span class="text-gray-900 font-medium">System error notifications</span>
+                            </label>
+                            <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                                <input type="checkbox" class="w-4 h-4 rounded" checked>
+                                <span class="text-gray-900 font-medium">Daily system summary</span>
+                            </label>
+                            <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                                <input type="checkbox" class="w-4 h-4 rounded" checked>
+                                <span class="text-gray-900 font-medium">Weekly performance report</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="border-t pt-6 flex gap-4">
+                        <button type="submit" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition flex items-center gap-2">
+                            <i class="fas fa-save"></i> Save Settings
+                        </button>
+                        <a href="/dashboard/admin/system" class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium rounded-lg transition flex items-center gap-2">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- System Status Sidebar -->
+        <div class="space-y-6">
+            <!-- System Health -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-heartbeat text-green-600 mr-2"></i>System Health
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-700 text-sm">API Server</span>
+                        <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
+                            <i class="fas fa-check-circle"></i> OK
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-700 text-sm">Database</span>
+                        <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
+                            <i class="fas fa-check-circle"></i> OK
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-700 text-sm">Memory Usage</span>
+                        <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+                            <i class="fas fa-bar-chart"></i> 45%
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-700 text-sm">Disk Space</span>
+                        <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+                            <i class="fas fa-bar-chart"></i> 62%
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Version Info -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-info-circle text-blue-600 mr-2"></i>System Information
+                </h3>
+                <div class="space-y-3 text-sm">
+                    <div>
+                        <p class="text-gray-600">Application Version</p>
+                        <p class="font-semibold text-gray-900">1.0.0</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600">Database Version</p>
+                        <p class="font-semibold text-gray-900">MySQL 8.0</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600">Framework</p>
+                        <p class="font-semibold text-gray-900">Flask 2.0+</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600">Last Updated</p>
+                        <p class="font-semibold text-gray-900">Jan 16, 2026</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Barangays Stats -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-map text-purple-600 mr-2"></i>Barangays
+                </h3>
+                <div class="space-y-2 text-sm max-h-48 overflow-y-auto">
+                    {% for barangay, count in barangays.items() %}
+                    <div class="flex justify-between">
+                        <span class="text-gray-700">{{ barangay }}</span>
+                        <span class="font-semibold text-gray-900">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Settings -->
+    <div class="card p-8 mb-12">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">
+            <i class="fas fa-cogs text-gray-600 mr-3"></i>Advanced Configuration
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="border border-gray-200 rounded-lg p-6">
+                <h3 class="font-semibold text-gray-900 mb-4">Cache Settings</h3>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between py-2">
+                        <span class="text-gray-700">Cache Type:</span>
+                        <strong class="text-gray-900">Redis</strong>
+                    </div>
+                    <div class="flex justify-between py-2">
+                        <span class="text-gray-700">Cache TTL:</span>
+                        <strong class="text-gray-900">3600 seconds</strong>
+                    </div>
+                    <div class="flex justify-between py-2">
+                        <span class="text-gray-700">Cache Size:</span>
+                        <strong class="text-gray-900">512 MB</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border border-gray-200 rounded-lg p-6">
+                <h3 class="font-semibold text-gray-900 mb-4">API Settings</h3>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between py-2">
+                        <span class="text-gray-700">Rate Limit:</span>
+                        <strong class="text-gray-900">1000/hour</strong>
+                    </div>
+                    <div class="flex justify-between py-2">
+                        <span class="text-gray-700">Timeout:</span>
+                        <strong class="text-gray-900">30 seconds</strong>
+                    </div>
+                    <div class="flex justify-between py-2">
+                        <span class="text-gray-700">Version:</span>
+                        <strong class="text-gray-900">v1.0</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="card border-red-200 bg-red-50 p-8">
+        <h2 class="text-2xl font-bold text-red-900 mb-6">
+            <i class="fas fa-exclamation-triangle text-red-600 mr-3"></i>Danger Zone
+        </h2>
+        <p class="text-red-700 mb-6">These actions can cause data loss or system issues. Proceed with extreme caution.</p>
+        <div class="space-y-3">
+            <button disabled class="w-full px-6 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition opacity-50 cursor-not-allowed" title="Contact developers to perform this action">
+                <i class="fas fa-trash-alt mr-2"></i> Purge All Inactive Records
+            </button>
+            <button disabled class="w-full px-6 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition opacity-50 cursor-not-allowed" title="Contact developers to perform this action">
+                <i class="fas fa-skull mr-2"></i> Factory Reset (Restore All Data)
+            </button>
+            <p class="text-xs text-red-600">Only developers with direct database access can perform these operations</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

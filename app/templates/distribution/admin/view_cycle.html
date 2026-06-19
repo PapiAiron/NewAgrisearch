@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}{{ cycle.name }} - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <a href="{{ url_for('distribution.list_cycles') }}" class="text-green-600 hover:text-green-700 mb-4 inline-block">
+            <i class="fas fa-arrow-left"></i> Back to Cycles
+        </a>
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ cycle.name }}</h1>
+                {% if cycle.description %}
+                <p class="text-gray-600">{{ cycle.description }}</p>
+                {% endif %}
+            </div>
+            {% if cycle.status in ['planned', 'ongoing'] %}
+            <a href="{{ url_for('distribution.allocate_to_event', event_id=cycle.id) }}" class="btn-primary inline-flex items-center gap-2">
+                <i class="fas fa-clipboard-list"></i> Allocate Supplies
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="card p-6">
+            <p class="text-sm text-gray-600 font-semibold">Total Allocated</p>
+            <p class="text-3xl font-bold text-blue-600 mt-2">{{ summary.total }}</p>
+        </div>
+        <div class="card p-6">
+            <p class="text-sm text-gray-600 font-semibold">Pending Delivery</p>
+            <p class="text-3xl font-bold text-yellow-600 mt-2">{{ summary.allocated }}</p>
+        </div>
+        <div class="card p-6">
+            <p class="text-sm text-gray-600 font-semibold">Distributed</p>
+            <p class="text-3xl font-bold text-purple-600 mt-2">{{ summary.distributed }}</p>
+        </div>
+        <div class="card p-6">
+            <p class="text-sm text-gray-600 font-semibold">Verified by Farmer</p>
+            <p class="text-3xl font-bold text-green-600 mt-2">{{ summary.verified }}</p>
+        </div>
+    </div>
+
+    <!-- Distributions Table -->
+    <div class="card overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Farm</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Supply</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Quantity</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dist in distributions %}
+                    <tr class="border-b hover:bg-gray-50 transition">
+                        <td class="px-6 py-4">
+                            <div>
+                                <p class="font-semibold text-gray-900">{{ dist.request.farm.name }}</p>
+                                <p class="text-xs text-gray-600">{{ dist.request.farm.barangay_name }}</p>
+                                <p class="text-xs text-gray-500">{{ dist.request.farm.owner.full_name }}</p>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div>
+                                <p class="font-semibold text-gray-900">{{ dist.request.supply_name }}</p>
+                                <p class="text-xs text-gray-600">{{ dist.request.supply_type }}</p>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="font-semibold text-gray-900">{{ dist.quantity_distributed }} {{ dist.request.unit }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if dist.status == 'allocated' %}
+                                <span class="inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold">
+                                    <i class="fas fa-clock mr-1"></i>Awaiting Delivery
+                                </span>
+                            {% elif dist.status == 'distributed' %}
+                                <span class="inline-block bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-semibold">
+                                    <i class="fas fa-truck mr-1"></i>Distributed
+                                </span>
+                                {% if dist.verification_code %}
+                                <p class="text-xs text-gray-500 mt-1">Code: <strong>{{ dist.verification_code }}</strong></p>
+                                {% endif %}
+                            {% elif dist.status == 'verified' %}
+                                <span class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">
+                                    <i class="fas fa-check-circle mr-1"></i>Verified
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if dist.status == 'allocated' %}
+                            <button onclick="markDistributed({{ dist.id }}, this)"
+                                    class="text-sm font-semibold text-purple-600 hover:text-purple-800 inline-flex items-center gap-1">
+                                <i class="fas fa-truck"></i> Mark Distributed
+                            </button>
+                            {% elif dist.status == 'distributed' %}
+                            <span class="text-xs text-gray-400">Awaiting farmer verification</span>
+                            {% else %}
+                            <span class="text-xs text-gray-400">&mdash;</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if not distributions %}
+        <div class="p-12 text-center">
+            <p class="text-gray-600">No distributions allocated yet.</p>
+            {% if cycle.status in ['planned', 'ongoing'] %}
+            <a href="{{ url_for('distribution.allocate_to_event', event_id=cycle.id) }}" class="btn-primary mt-4">
+                <i class="fas fa-plus mr-2"></i>Allocate Supplies
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function markDistributed(recordId, btn) {
+    if (!confirm('Mark this item as distributed? A verification code will be generated for the farmer.')) return;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    fetch(`/distribution/officer/distribute/${recordId}`, {
+        method: 'POST',
+        headers: {'X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.content || '',
+                  'Content-Type': 'application/json'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Distributed! Verification code: ${data.verification_code}\nGive this code to ${data.farmer_name}`);
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-truck"></i> Mark Distributed';
+        }
+    })
+    .catch(() => { alert('Network error'); btn.disabled = false; });
+}
+</script>
+{% endblock %}

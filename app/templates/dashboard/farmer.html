@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+
+{% block title %}Farmer Dashboard - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Welcome Section -->
+    <div class="mb-12">
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">
+            Welcome, <span class="text-gradient">{{ user.full_name }}</span>!
+        </h1>
+        <p class="text-lg text-gray-600">
+            <i class="fas fa-map-marker-alt text-green-600 mr-2"></i>
+            Barangay: <strong>{{ user.barangay_name }}</strong>
+        </p>
+    </div>
+    
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+        <!-- Total Farms -->
+        <div class="card p-6 hover:shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Total Farms</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ total_farms }}</p>
+                </div>
+                <div class="text-4xl text-green-600 opacity-20">
+                    <i class="fas fa-tractor"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total Area -->
+        <div class="card p-6 hover:shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Total Area</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ "%.0f"|format(total_area) }} m²</p>
+                </div>
+                <div class="text-4xl text-blue-600 opacity-20">
+                    <i class="fas fa-map"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Average Size -->
+        <div class="card p-6 hover:shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Avg. Farm Size</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ "%.0f"|format(average_area) }} m²</p>
+                </div>
+                <div class="text-4xl text-yellow-600 opacity-20">
+                    <i class="fas fa-chart-pie"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Crop Types -->
+        <div class="card p-6 hover:shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Crop Types</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ crop_types|length }}</p>
+                </div>
+                <div class="text-4xl text-purple-600 opacity-20">
+                    <i class="fas fa-leaf"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Livestock -->
+        <div class="card p-6 hover:shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Total Animals</p>
+                    <p class="text-3xl font-bold text-amber-700 mt-2">{{ total_livestock }}</p>
+                </div>
+                <div class="text-4xl text-amber-600 opacity-20">
+                    <i class="fas fa-cow"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Municipal Offers Banner -->
+    {% if open_offers_count %}
+    <div class="bg-green-50 border border-green-300 rounded-xl p-5 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-store text-green-600 text-lg"></i>
+            </div>
+            <div>
+                <p class="font-bold text-green-800 text-base">
+                    {{ open_offers_count }} supply offer{{ 's are' if open_offers_count != 1 else ' is' }} available for your barangay!
+                </p>
+                <p class="text-green-700 text-sm mt-0.5">The municipality has supplies ready for claiming. Register now to secure your allocation.</p>
+            </div>
+        </div>
+        <a href="{{ url_for('distribution.available_offers') }}"
+           class="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm flex-shrink-0">
+            <i class="fas fa-store"></i> View Offers
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Livestock Alerts -->
+    {% if vaccine_alerts %}
+    <div class="bg-orange-50 border-l-4 border-orange-500 p-4 mb-8 rounded">
+        <h3 class="text-orange-800 font-semibold mb-3">⚠️ Upcoming Vaccine Due</h3>
+        <div class="space-y-2">
+            {% for alert in vaccine_alerts[:3] %}
+            <div class="text-orange-700 text-sm flex justify-between items-center">
+                <span><strong>{{ alert.livestock.unique_id or alert.livestock.name }}</strong> - {{ alert.name }}</span>
+                <span class="bg-orange-200 px-3 py-1 rounded text-xs">Due: {{ alert.next_due_date.strftime('%b %d') }}</span>
+            </div>
+            {% endfor %}
+            {% if vaccine_alerts|length > 3 %}
+            <p class="text-orange-700 text-sm mt-2"><strong>{{ vaccine_alerts|length - 3 }} more vaccines due</strong></p>
+            {% endif %}
+        </div>
+        <a href="{{ url_for('livestock.list_livestock') }}" class="text-orange-700 font-semibold text-sm mt-3 inline-block hover:underline">View All →</a>
+    </div>
+    {% endif %}
+    
+    <!-- Health Metrics Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <!-- Animals with Diseases -->
+        <div class="card p-6 hover:shadow-lg border-l-4 border-red-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Animals with Diseases</p>
+                    <p class="text-3xl font-bold text-red-600 mt-2">{{ animals_with_diseases }}</p>
+                </div>
+                <div class="text-4xl text-red-600 opacity-20">
+                    <i class="fas fa-virus"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Vaccines Due -->
+        <div class="card p-6 hover:shadow-lg border-l-4 border-yellow-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Vaccines Due (7 days)</p>
+                    <p class="text-3xl font-bold text-yellow-600 mt-2">{{ upcoming_vaccines }}</p>
+                </div>
+                <div class="text-4xl text-yellow-600 opacity-20">
+                    <i class="fas fa-syringe"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Vaccine Inventory -->
+        <div class="card p-6 hover:shadow-lg border-l-4 border-green-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Vaccine Stock</p>
+                    <p class="text-3xl font-bold text-green-600 mt-2">{{ vaccines_count }}</p>
+                    <p class="text-xs text-red-600 mt-1">{{ expired_vaccines }} expired, {{ expiring_soon_vaccines }} expiring</p>
+                </div>
+                <div class="text-4xl text-green-600 opacity-20">
+                    <i class="fas fa-box"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Health Alerts -->
+        <div class="card p-6 hover:shadow-lg border-l-4 border-orange-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Health Alerts</p>
+                    <p class="text-3xl font-bold text-orange-600 mt-2">{{ total_health_alerts }}</p>
+                    <p class="text-xs text-red-600 mt-1">{{ critical_alerts }} critical</p>
+                </div>
+                <div class="text-4xl text-orange-600 opacity-20">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <!-- Quick Actions -->
+        <div class="lg:col-span-1">
+            <div class="card p-8 h-full">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-bolt text-blue-600 mr-3"></i>Quick Actions
+                </h2>
+                
+                <div class="space-y-3">
+                    <a href="{{ url_for('farm.list_farms') }}" class="w-full block px-4 py-3 rounded-lg border border-gray-200 hover:bg-green-50 hover:border-green-300 transition">
+                        <div class="flex items-center">
+                            <i class="fas fa-list text-green-600 mr-3 text-lg"></i>
+                            <span class="font-medium text-gray-900">View All Farms</span>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ url_for('farm.create_farm') }}" class="w-full block px-4 py-3 rounded-lg border border-gray-200 hover:bg-green-50 hover:border-green-300 transition">
+                        <div class="flex items-center">
+                            <i class="fas fa-plus text-green-600 mr-3 text-lg"></i>
+                            <span class="font-medium text-gray-900">Register New Farm</span>
+                        </div>
+                    </a>
+
+                    <a href="{{ url_for('livestock.list_livestock') }}" class="w-full block px-4 py-3 rounded-lg border border-gray-200 hover:bg-amber-50 hover:border-amber-300 transition">
+                        <div class="flex items-center">
+                            <i class="fas fa-cow text-amber-600 mr-3 text-lg"></i>
+                            <span class="font-medium text-gray-900">Manage Livestock</span>
+                        </div>
+                    </a>
+
+                    <a href="{{ url_for('distribution.create_request') }}" class="w-full block px-4 py-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition">
+                        <div class="flex items-center">
+                            <i class="fas fa-cart-plus text-blue-600 mr-3 text-lg"></i>
+                            <span class="font-medium text-gray-900">Request Supplies</span>
+                        </div>
+                    </a>
+
+                    <a href="{{ url_for('distribution.my_requests') }}" class="w-full block px-4 py-3 rounded-lg border border-gray-200 hover:bg-purple-50 hover:border-purple-300 transition">
+                        <div class="flex items-center">
+                            <i class="fas fa-box text-purple-600 mr-3 text-lg"></i>
+                            <span class="font-medium text-gray-900">My Distributions</span>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ url_for('dashboard.profile') }}" class="w-full block px-4 py-3 rounded-lg border border-gray-200 hover:bg-green-50 hover:border-green-300 transition">
+                        <div class="flex items-center">
+                            <i class="fas fa-user-circle text-green-600 mr-3 text-lg"></i>
+                            <span class="font-medium text-gray-900">View Profile</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Livestock by Type -->
+        <div class="lg:col-span-1">
+            <div class="card p-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-chart-bar text-amber-600 mr-3"></i>Animals by Type
+                </h2>
+                
+                {% if livestock_by_type %}
+                <div class="space-y-3">
+                    {% for animal_type, count in livestock_by_type.items()|sort %}
+                    <div class="flex justify-between items-center pb-3 border-b last:border-b-0">
+                        <span class="text-gray-700 font-medium capitalize">{{ animal_type }}</span>
+                        <span class="bg-amber-100 text-amber-800 px-3 py-1 rounded-full font-bold text-sm">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-500 text-center py-6">No livestock yet</p>
+                <a href="{{ url_for('livestock.list_livestock') }}" class="block text-center text-amber-600 hover:text-amber-700 font-semibold text-sm">Register Animals →</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Account Info -->
+        <div class="lg:col-span-1">
+            <div class="card p-8 h-full">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-info-circle text-blue-600 mr-3"></i>Account Information
+                </h2>
+                
+                <div class="space-y-6">
+                    <!-- Status -->
+                    <div class="flex items-start border-b pb-6">
+                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mr-4 flex-shrink-0">
+                            <i class="fas fa-check-circle text-green-600 text-sm"></i>
+                        </div>
+                        <div class="flex-grow">
+                            <p class="font-medium text-gray-900">Account Status</p>
+                            <p class="text-sm text-gray-600 mt-1">
+                                {% if user.is_active %}<span class="text-green-600 font-semibold">Active</span>{% else %}<span class="text-red-600 font-semibold">Inactive</span>{% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Verification -->
+                    <div class="flex items-start border-b pb-6">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-4 flex-shrink-0">
+                            {% if user.is_verified %}<i class="fas fa-check text-blue-600 text-sm"></i>{% else %}<i class="fas fa-exclamation text-orange-600 text-sm"></i>{% endif %}
+                        </div>
+                        <div class="flex-grow">
+                            <p class="font-medium text-gray-900">Verification Status</p>
+                            <p class="text-sm text-gray-600 mt-1">
+                                {% if user.is_verified %}<span class="text-green-600 font-semibold">Verified</span>{% else %}<span class="text-orange-600 font-semibold">Unverified</span>{% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Last Login -->
+                    <div class="flex items-start">
+                        <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mr-4 flex-shrink-0">
+                            <i class="fas fa-calendar-alt text-purple-600 text-sm"></i>
+                        </div>
+                        <div class="flex-grow">
+                            <p class="font-medium text-gray-900">Member Since</p>
+                            <p class="text-sm text-gray-600 mt-1">{{ user.created_at.strftime('%B %d, %Y') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Coordinator Dashboard - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Welcome Section -->
+    <div class="mb-12">
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">
+            Municipal Coordinator Dashboard
+        </h1>
+        <p class="text-lg text-gray-600">
+            <i class="fas fa-city text-blue-600 mr-2"></i>
+            Victoria, Laguna
+        </p>
+    </div>
+    
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+        <!-- Total Farms -->
+        <div class="card p-6 hover:shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Total Farms</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ total_farms }}</p>
+                </div>
+                <div class="text-4xl text-green-600 opacity-20">
+                    <i class="fas fa-tractor"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total Farmers -->
+        <div class="card p-6 hover:shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Total Farmers</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ total_farmers }}</p>
+                </div>
+                <div class="text-4xl text-blue-600 opacity-20">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total Area -->
+        <div class="card p-6 hover:shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Total Area</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ "%.0f"|format(total_area) }} m²</p>
+                </div>
+                <div class="text-4xl text-yellow-600 opacity-20">
+                    <i class="fas fa-map"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Avg Farm Size -->
+        <div class="card p-6 hover:shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Avg. Farm Size</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ "%.0f"|format(average_area) }} m²</p>
+                </div>
+                <div class="text-4xl text-purple-600 opacity-20">
+                    <i class="fas fa-chart-pie"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Livestock -->
+        <div class="card p-6 hover:shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Total Animals</p>
+                    <p class="text-3xl font-bold text-amber-700 mt-2">{{ total_livestock }}</p>
+                </div>
+                <div class="text-4xl text-amber-600 opacity-20">
+                    <i class="fas fa-cow"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Livestock Alerts -->
+    {% if vaccine_alerts %}
+    <div class="bg-orange-50 border-l-4 border-orange-500 p-4 mb-8 rounded">
+        <h3 class="text-orange-800 font-semibold mb-3">⚠️ Municipality-Wide Vaccine Alerts</h3>
+        <div class="space-y-2">
+            {% for alert in vaccine_alerts[:5] %}
+            <div class="text-orange-700 text-sm flex justify-between items-center">
+                <span><strong>{{ alert.livestock.unique_id or alert.livestock.name }}</strong> ({{ alert.livestock.animal_type }}) - {{ alert.name }}</span>
+                <span class="bg-orange-200 px-3 py-1 rounded text-xs">Due: {{ alert.next_due_date.strftime('%b %d') }}</span>
+            </div>
+            {% endfor %}
+            {% if vaccine_alerts|length > 5 %}
+            <p class="text-orange-700 text-sm mt-2"><strong>{{ vaccine_alerts|length - 5 }} more vaccines due across municipality</strong></p>
+            {% endif %}
+        </div>
+        <a href="{{ url_for('livestock.list_livestock') }}" class="text-orange-700 font-semibold text-sm mt-3 inline-block hover:underline">View All →</a>
+    </div>
+    {% endif %}
+    
+    <!-- Health Metrics Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <!-- Animals with Diseases -->
+        <div class="card p-6 hover:shadow-lg border-l-4 border-red-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Animals with Diseases</p>
+                    <p class="text-3xl font-bold text-red-600 mt-2">{{ animals_with_diseases }}</p>
+                </div>
+                <div class="text-4xl text-red-600 opacity-20">
+                    <i class="fas fa-virus"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Vaccines Due -->
+        <div class="card p-6 hover:shadow-lg border-l-4 border-yellow-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Vaccines Due (7 days)</p>
+                    <p class="text-3xl font-bold text-yellow-600 mt-2">{{ upcoming_vaccines }}</p>
+                </div>
+                <div class="text-4xl text-yellow-600 opacity-20">
+                    <i class="fas fa-syringe"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Vaccine Inventory -->
+        <div class="card p-6 hover:shadow-lg border-l-4 border-green-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Vaccine Stock</p>
+                    <p class="text-3xl font-bold text-green-600 mt-2">{{ vaccines_count }}</p>
+                    <p class="text-xs text-red-600 mt-1">{{ expired_vaccines }} expired, {{ expiring_soon_vaccines }} expiring</p>
+                </div>
+                <div class="text-4xl text-green-600 opacity-20">
+                    <i class="fas fa-box"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Health Alerts -->
+        <div class="card p-6 hover:shadow-lg border-l-4 border-orange-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Health Alerts</p>
+                    <p class="text-3xl font-bold text-orange-600 mt-2">{{ total_health_alerts }}</p>
+                    <p class="text-xs text-red-600 mt-1">{{ critical_alerts }} critical</p>
+                </div>
+                <div class="text-4xl text-orange-600 opacity-20">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Two Column Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <!-- Farms by Barangay -->
+        <div class="lg:col-span-2">
+            <div class="card p-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-map-marked-alt text-green-600 mr-3"></i>Farms by Barangay
+                </h2>
+                
+                {% if farms_by_barangay %}
+                <div class="space-y-6">
+                    {% for barangay, barangay_farms in farms_by_barangay.items() %}
+                    <div class="border-b pb-6 last:border-b-0">
+                        <h3 class="text-lg font-bold text-gray-900 mb-3">
+                            <i class="fas fa-map-pin text-green-600 mr-2"></i>{{ barangay }}
+                        </h3>
+                        <div class="grid grid-cols-1 gap-2 ml-6">
+                            {% for farm in barangay_farms %}
+                            <div class="flex items-start justify-between bg-gray-50 p-3 rounded">
+                                <div class="flex-grow">
+                                    <p class="font-medium text-gray-900">{{ farm.name }}</p>
+                                    <p class="text-sm text-gray-600">{{ farm.crop_type }} | {{ "%.0f"|format(farm.area_square_meters) }} m²</p>
+                                </div>
+                                <a href="{{ url_for('farm.view_farm', farm_id=farm.id) }}" class="text-blue-600 hover:text-blue-800 text-sm">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-12">
+                    <i class="fas fa-inbox text-gray-400 text-4xl mb-4"></i>
+                    <p class="text-gray-600 text-lg">No farms registered yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+            </div>
+        </div>
+        
+        <!-- Statistics -->
+        <div class="space-y-8">
+            <!-- Crop Distribution -->
+            <div class="card p-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-chart-bar text-blue-600 mr-3"></i>Crops
+                </h2>
+                
+                {% if crop_distribution %}
+                <div class="space-y-3">
+                    {% for crop, count in crop_distribution.items() %}
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-700">{{ crop }}</span>
+                        <span class="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-600">No crop data available</p>
+                {% endif %}
+            </div>
+            
+            <!-- Summary -->
+            <div class="card p-8 bg-gradient-to-br from-blue-50 to-transparent">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-summary text-blue-600 mr-3"></i>Summary
+                </h2>
+                
+                <div class="space-y-3 text-sm">
+                    <p class="text-gray-700">
+                        <strong>Barangays:</strong> {{ farms_by_barangay|length }}
+                    </p>
+                    <p class="text-gray-700">
+                        <strong>Total Farms:</strong> {{ total_farms }}
+                    </p>
+                    <p class="text-gray-700">
+                        <strong>Active Farmers:</strong> {{ total_farmers }}
+                    </p>
+                    <p class="text-gray-700">
+                        <strong>Municipal Area:</strong> {{ "%.0f"|format(total_area) }} m²
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Supply Feedback - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <a href="{{ url_for('distribution.my_requests') }}" class="text-green-600 hover:text-green-700 mb-4 inline-block">
+            <i class="fas fa-arrow-left"></i> Back to Distributions
+        </a>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">
+            <i class="fas fa-comment-dots text-green-600 mr-2"></i>Supply Usage Feedback
+        </h1>
+        <p class="text-gray-600">Tell us how the supply helped your farm</p>
+    </div>
+
+    <!-- Distribution Summary -->
+    <div class="card p-6 mb-6 bg-blue-50 border border-blue-200">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <p class="text-xs text-blue-600 font-semibold uppercase mb-1">Supply</p>
+                <p class="text-lg font-bold text-blue-900">{{ distribution.supply_name }}</p>
+                <p class="text-sm text-blue-800">{{ distribution.quantity_distributed }} {{ distribution.unit }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-blue-600 font-semibold uppercase mb-1">Farm</p>
+                <p class="text-lg font-bold text-blue-900">{{ distribution.farm.name }}</p>
+                <p class="text-sm text-blue-800">{{ distribution.farm.barangay_name }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Form -->
+    <div class="card p-8">
+        <form method="POST" class="space-y-8">
+            <!-- Before and After Metrics -->
+            <div class="space-y-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-chart-line mr-2"></i>Measure the Impact
+                </h2>
+
+                <!-- Metric Type -->
+                <div>
+                    <label for="metric_type" class="block text-sm font-semibold text-gray-700 mb-2">What did you measure?</label>
+                    <select id="metric_type" name="metric_type" class="form-input w-full" required>
+                        <option value="">Select a metric...</option>
+                        {% for key, value in metric_types.items() %}
+                        <option value="{{ key }}" {% if existing_feedback and existing_feedback.metric_type == key %}selected{% endif %}>
+                            {{ value }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">Choose what you want to measure (soil quality, plant health, weight, etc.)</p>
+                </div>
+
+                <!-- Metric Unit -->
+                <div>
+                    <label for="metric_unit" class="block text-sm font-semibold text-gray-700 mb-2">Unit of Measurement</label>
+                    <input type="text" id="metric_unit" name="metric_unit" class="form-input w-full" 
+                           placeholder="e.g., kg, scale 1-5, percentage" 
+                           value="{% if existing_feedback %}{{ existing_feedback.metric_unit }}{% endif %}">
+                    <p class="text-xs text-gray-500 mt-1">How are you measuring this? (kg, scale, percentage, etc.)</p>
+                </div>
+
+                <!-- Before and After Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="before_value" class="block text-sm font-semibold text-gray-700 mb-2">Before Using Supply</label>
+                        <input type="text" id="before_value" name="before_value" class="form-input w-full" 
+                               placeholder="e.g., 45, Low, 2/5" 
+                               value="{% if existing_feedback %}{{ existing_feedback.before_value }}{% endif %}" required>
+                        <p class="text-xs text-gray-500 mt-1">What was the value before?</p>
+                    </div>
+                    <div>
+                        <label for="after_value" class="block text-sm font-semibold text-gray-700 mb-2">After Using Supply</label>
+                        <input type="text" id="after_value" name="after_value" class="form-input w-full" 
+                               placeholder="e.g., 52, High, 4.5/5" 
+                               value="{% if existing_feedback %}{{ existing_feedback.after_value }}{% endif %}" required>
+                        <p class="text-xs text-gray-500 mt-1">What is the value now?</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feedback Section -->
+            <div class="space-y-6 border-t pt-6">
+                <h2 class="text-xl font-bold text-gray-900">
+                    <i class="fas fa-pen-to-square mr-2"></i>Your Observations
+                </h2>
+
+                <!-- General Feedback -->
+                <div>
+                    <label for="general_feedback" class="block text-sm font-semibold text-gray-700 mb-2">What did you observe?</label>
+                    <textarea id="general_feedback" name="general_feedback" rows="4" class="form-input w-full" 
+                              placeholder="Describe how the supply affected your farm. What changes did you notice?" required>{% if existing_feedback %}{{ existing_feedback.general_feedback }}{% endif %}</textarea>
+                    <p class="text-xs text-gray-500 mt-1">Be as detailed as possible - this helps the municipality improve!</p>
+                </div>
+
+                <!-- Challenges -->
+                <div>
+                    <label for="challenges" class="block text-sm font-semibold text-gray-700 mb-2">Challenges (if any)</label>
+                    <textarea id="challenges" name="challenges" rows="3" class="form-input w-full" 
+                              placeholder="Any problems or issues you faced using this supply...">{% if existing_feedback %}{{ existing_feedback.challenges }}{% endif %}</textarea>
+                    <p class="text-xs text-gray-500 mt-1">Optional: Let us know if there were any difficulties</p>
+                </div>
+
+                <!-- Suggestions -->
+                <div>
+                    <label for="suggestions" class="block text-sm font-semibold text-gray-700 mb-2">Suggestions for Improvement</label>
+                    <textarea id="suggestions" name="suggestions" rows="3" class="form-input w-full" 
+                              placeholder="Any suggestions for better quality, quantity, or timing...">{% if existing_feedback %}{{ existing_feedback.suggestions }}{% endif %}</textarea>
+                    <p class="text-xs text-gray-500 mt-1">Optional: Your suggestions help us serve you better</p>
+                </div>
+            </div>
+
+            <!-- Feedback Date -->
+            <div class="border-t pt-6">
+                <label for="feedback_date" class="block text-sm font-semibold text-gray-700 mb-2">Date of Observation</label>
+                <input type="date" id="feedback_date" name="feedback_date" class="form-input w-full" 
+                       value="{% if existing_feedback %}{{ existing_feedback.feedback_date }}{% else %}{{ today }}{% endif %}" required>
+                <p class="text-xs text-gray-500 mt-1">When did you make this observation?</p>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex gap-3 pt-4">
+                <button type="submit" class="btn-primary flex-1 inline-flex justify-center items-center gap-2">
+                    <i class="fas fa-check"></i> {% if existing_feedback %}Update{% else %}Submit{% endif %} Feedback
+                </button>
+                <a href="{{ url_for('distribution.my_requests') }}" class="btn-secondary flex-1 text-center inline-flex justify-center items-center gap-2">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Help Panel -->
+    <div class="card bg-green-50 border border-green-200 p-6 mt-6">
+        <h3 class="text-lg font-semibold text-green-900 mb-4">
+            <i class="fas fa-lightbulb mr-2"></i>Tips for Good Feedback
+        </h3>
+        <ul class="space-y-2 text-green-800">
+            <li><strong>Be Specific:</strong> Use numbers and measurable values when possible</li>
+            <li><strong>Be Honest:</strong> Tell us about both positive and negative results</li>
+            <li><strong>Be Timely:</strong> Provide feedback soon after using the supply</li>
+            <li><strong>Compare:</strong> Tell us how things were before and after</li>
+            <li><strong>Suggest:</strong> Share your ideas for improvements</li>
+        </ul>
+    </div>
+</div>
+
+<style>
+    .form-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+</style>
+{% endblock %}

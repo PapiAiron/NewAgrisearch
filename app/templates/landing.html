@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AgriSearch | Smart Farm Operations for Victoria, Laguna</title>
+    <meta name="description" content="AgriSearch helps farmers and municipal staff in Victoria, Laguna manage farms, crops, livestock, health records, and supply distribution with an agriculture-focused AI assistant." />
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='agrisearch_logo.png') }}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}" />
+</head>
+<body>
+    <header class="topbar">
+        <div class="wrap topbar-inner">
+            <a href="{{ url_for('index') }}" class="brand">
+                <span class="brand-badge"><img src="{{ url_for('static', filename='agrisearch_logo.png') }}" alt="AgriSearch Logo"></span>
+                <span>AgriSearch</span>
+            </a>
+            <nav class="top-actions">
+                <a class="btn btn-outline" href="{{ url_for('auth.login') }}">Login</a>
+                <a class="btn btn-solid" href="{{ url_for('auth.register') }}">Create Account</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="wrap hero-grid">
+                <div class="hero-copy">
+                    <span class="kicker"><i class="fas fa-map-marker-alt"></i> Victoria, Laguna</span>
+                    <h1>Run your farm operations with one smart command center.</h1>
+                    <p class="lead">
+                        AgriSearch brings crop records, livestock health, supply tracking, and municipal distribution updates into one connected workflow.
+                        Ask AgriBot for practical agriculture guidance anytime.
+                    </p>
+                    <div class="hero-cta">
+                        <a class="btn btn-solid" href="{{ url_for('auth.register') }}">Start with AgriSearch</a>
+                        <a class="btn btn-outline" href="#chatbot-demo">Try Chatbot Demo</a>
+                    </div>
+
+                    <div class="mini-stats">
+                        <article class="stat-card">
+                            <div class="stat-num">9</div>
+                            <div class="stat-label">Victoria barangays supported</div>
+                        </article>
+                        <article class="stat-card">
+                            <div class="stat-num">4</div>
+                            <div class="stat-label">Core modules in one platform</div>
+                        </article>
+                        <article class="stat-card">
+                            <div class="stat-num">24/7</div>
+                            <div class="stat-label">Agriculture chatbot support</div>
+                        </article>
+                    </div>
+                </div>
+
+                <aside class="hero-side">
+                    <div class="side-head">
+                        <span class="side-title">What teams use daily</span>
+                        <i class="fas fa-bolt" style="color:#f59e0b"></i>
+                    </div>
+                    <ul class="side-list">
+                        <li><i class="fas fa-tractor"></i> Farm profiles and area monitoring per lot</li>
+                        <li><i class="fas fa-leaf"></i> Crop cycle and planting progress visibility</li>
+                        <li><i class="fas fa-cow"></i> Livestock and health history tracking</li>
+                        <li><i class="fas fa-syringe"></i> Vaccine and disease alert workflows</li>
+                        <li><i class="fas fa-boxes-stacked"></i> Supply inventory and distribution monitoring</li>
+                    </ul>
+                </aside>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="wrap">
+                <div class="section-head">
+                    <h2>Built for real agricultural workflows</h2>
+                    <p>Designed for farmers, Victoria admins, and agricultural operations teams.</p>
+                </div>
+                <div class="feature-grid">
+                    <article class="feature-card">
+                        <i class="fas fa-map-marked-alt" style="color:#0f9f6e"></i>
+                        <h3>Farm and Lot Visibility</h3>
+                        <p>Track farms by location, barangay, area, and lot boundaries for better planning and field coordination.</p>
+                    </article>
+                    <article class="feature-card">
+                        <i class="fas fa-clipboard-check" style="color:#0f4d87"></i>
+                        <h3>Operational Tracking</h3>
+                        <p>Capture records for crops, livestock, health interventions, and distribution actions with clear audit trails.</p>
+                    </article>
+                    <article class="feature-card">
+                        <i class="fas fa-robot" style="color:#7c3aed"></i>
+                        <h3>AgriBot Assistant</h3>
+                        <p>Get practical agriculture advice tuned for Philippine context and local farm operations.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="chatbot-demo">
+            <div class="wrap">
+                <div class="section-head">
+                    <h2>Try AgriBot demo</h2>
+                    <p>Ask crop, livestock, disease, or farm-management questions before creating an account.</p>
+                </div>
+
+                <div class="chat-shell">
+                    <div id="chatLog" class="chat-log"></div>
+                    <div class="chat-compose">
+                        <input id="chatInput" class="chat-input" type="text" maxlength="600" placeholder="Example: What is the best schedule for rice fertilization in rainy season?" />
+                        <button id="sendBtn" class="btn btn-solid" type="button">Send</button>
+                    </div>
+                    <div class="chat-meta">
+                        <span id="demoLimitText">Demo limit: 8 messages / 15 minutes</span>
+                        <button id="clearBtn" class="btn btn-outline" type="button" style="padding:6px 10px;font-size:12px;">Clear Chat</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="foot">
+        <div class="wrap" style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+            <span>AgriSearch platform for Victoria, Laguna agriculture operations.</span>
+            <span>
+                <a href="{{ url_for('auth.login') }}" style="color:#0f9f6e;font-weight:600;">Login</a>
+                <span style="color:#9aa7ae">|</span>
+                <a href="{{ url_for('auth.register') }}" style="color:#0f9f6e;font-weight:600;">Register</a>
+            </span>
+        </div>
+    </footer>
+
+    <script>
+        const STORAGE_KEY = 'agri_landing_chat_v1';
+        const chatLog = document.getElementById('chatLog');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const limitText = document.getElementById('demoLimitText');
+
+        let chatHistory = [];
+        let busy = false;
+
+        function saveHistory() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(chatHistory));
+            } catch (e) {
+            }
+        }
+
+        function loadHistory() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return [];
+                const parsed = JSON.parse(raw);
+                if (!Array.isArray(parsed)) return [];
+                return parsed.filter(item => item && item.role && item.content).slice(-16);
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function escapeHtml(text) {
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        function appendMessage(role, content) {
+            const row = document.createElement('div');
+            row.className = 'msg ' + (role === 'user' ? 'user' : 'bot');
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            bubble.innerHTML = escapeHtml(content);
+            row.appendChild(bubble);
+            chatLog.appendChild(row);
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+
+        function renderAll() {
+            chatLog.innerHTML = '';
+            if (!chatHistory.length) {
+                appendMessage('bot', 'Hello. I am AgriBot. Ask me about crops, livestock, fertilizer plans, or disease prevention.');
+                return;
+            }
+            chatHistory.forEach(m => appendMessage(m.role, m.content));
+        }
+
+        async function sendMessage() {
+            if (busy) return;
+            const message = chatInput.value.trim();
+            if (!message) return;
+            if (message.length > 600) {
+                alert('Message too long. Maximum is 600 characters.');
+                return;
+            }
+
+            busy = true;
+            sendBtn.disabled = true;
+            chatInput.disabled = true;
+
+            chatHistory.push({ role: 'user', content: message });
+            appendMessage('user', message);
+            chatInput.value = '';
+
+            try {
+                const res = await fetch('/chatbot/demo/ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message,
+                        history: chatHistory.slice(-8)
+                    })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    const errMsg = data.error || 'Request failed';
+                    if (data.retry_after_seconds) {
+                        limitText.textContent = 'Limit reached. Try again in ' + data.retry_after_seconds + 's.';
+                    }
+                    chatHistory.push({ role: 'assistant', content: errMsg });
+                    appendMessage('assistant', errMsg);
+                } else {
+                    chatHistory.push({ role: 'assistant', content: data.reply || 'No response.' });
+                    appendMessage('assistant', data.reply || 'No response.');
+                    if (typeof data.remaining_messages === 'number') {
+                        limitText.textContent = 'Remaining demo messages: ' + data.remaining_messages;
+                    }
+                }
+                chatHistory = chatHistory.slice(-16);
+                saveHistory();
+            } catch (e) {
+                const msg = 'Network error. Please try again.';
+                chatHistory.push({ role: 'assistant', content: msg });
+                appendMessage('assistant', msg);
+                saveHistory();
+            } finally {
+                busy = false;
+                sendBtn.disabled = false;
+                chatInput.disabled = false;
+                chatInput.focus();
+            }
+        }
+
+        clearBtn.addEventListener('click', () => {
+            chatHistory = [];
+            saveHistory();
+            limitText.textContent = 'Demo limit: 8 messages / 15 minutes';
+            renderAll();
+        });
+
+        sendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        chatHistory = loadHistory();
+        renderAll();
+    </script>
+</body>
+</html>

@@ -1,0 +1,999 @@
+{% extends "base.html" %}
+
+{% block title %}{{ livestock.animal_type|title }} - {{ livestock.unique_id }} - AgriSearch{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">
+                {{ livestock.animal_type|title }}
+                {% if livestock.unique_id %}
+                <span class="text-gray-600 text-lg">- {{ livestock.unique_id }}</span>
+                {% endif %}
+            </h1>
+            <p class="text-gray-600 mt-2">Farm: <strong>{{ livestock.farm.name }}</strong></p>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+            {% if user.role == 'farmer' and livestock.farm.owner_id == user.id %}
+            <button onclick="document.getElementById('weightModal').classList.remove('hidden')"
+                class="btn-secondary text-sm flex items-center gap-2">
+                <i class="fas fa-weight"></i> Log Weight
+            </button>
+            {% if livestock.status == 'active' %}
+            <button onclick="document.getElementById('saleModal').classList.remove('hidden')"
+                class="btn-secondary text-sm flex items-center gap-2">
+                <i class="fas fa-tags"></i> Record Sale
+            </button>
+            <button onclick="document.getElementById('deathModal').classList.remove('hidden')"
+                class="btn-danger text-sm flex items-center gap-2">
+                <i class="fas fa-skull-crossbones"></i> Record Death
+            </button>
+            {% endif %}
+            {% endif %}
+            <a href="{{ url_for('livestock.record_card', livestock_id=livestock.id) }}" target="_blank"
+               class="btn-secondary text-sm flex items-center gap-2">
+                <i class="fas fa-print"></i> Print Record
+            </a>
+            <a href="{{ url_for('livestock.edit_livestock', livestock_id=livestock.id) }}" 
+               class="btn-primary flex items-center gap-2">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+            <form method="POST" action="{{ url_for('livestock.delete_livestock', livestock_id=livestock.id) }}" 
+                  onsubmit="return confirm('Are you sure? This action cannot be undone.');" style="display: inline;">
+                <button type="submit" class="btn-danger flex items-center gap-2">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Info Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+        <div class="card p-6">
+            <p class="text-gray-600 text-sm font-semibold">Status</p>
+            <p class="text-2xl font-bold mt-2">
+                <span class="px-3 py-1 rounded-full text-sm
+                    {% if livestock.status == 'active' %}
+                    bg-green-100 text-green-800
+                    {% elif livestock.status == 'sold' %}
+                    bg-blue-100 text-blue-800
+                    {% elif livestock.status == 'deceased' %}
+                    bg-gray-100 text-gray-800
+                    {% else %}
+                    bg-yellow-100 text-yellow-800
+                    {% endif %}
+                ">
+                    {{ livestock.status|title }}
+                </span>
+            </p>
+        </div>
+
+        <div class="card p-6">
+            <p class="text-gray-600 text-sm font-semibold">Age</p>
+            <p class="text-2xl font-bold text-green-600 mt-2">{{ livestock.get_age_display() }}</p>
+        </div>
+
+        <div class="card p-6">
+            <p class="text-gray-600 text-sm font-semibold">Count</p>
+            <p class="text-2xl font-bold text-blue-600 mt-2">{{ livestock.count }}</p>
+        </div>
+
+        <div class="card p-6">
+            <p class="text-gray-600 text-sm font-semibold">Weight</p>
+            <p class="text-2xl font-bold text-purple-600 mt-2">{{ livestock.weight_kg or 'N/A' }}{% if livestock.weight_kg %} kg{% endif %}</p>
+        </div>
+
+        <div class="card p-6">
+            <p class="text-gray-600 text-sm font-semibold">Market Readiness</p>
+            {% if livestock.status != 'active' %}
+            <p class="text-xl font-bold text-gray-500 mt-2">—</p>
+            {% elif livestock.is_ready_for_sale %}
+            <p class="mt-2"><span class="px-3 py-1 rounded-full text-sm font-bold bg-green-100 text-green-800">✅ Ready to Sell</span></p>
+            {% else %}
+            <p class="mt-2"><span class="px-3 py-1 rounded-full text-sm font-bold bg-yellow-100 text-yellow-800">⏳ Not Ready Yet</span></p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Basic Information -->
+    <div class="card p-6 mb-8">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 pb-3 border-b">Animal Information</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <p class="text-gray-600 text-sm font-semibold">Breed</p>
+                <p class="text-gray-900 font-semibold">{{ livestock.breed or 'Not specified' }}</p>
+            </div>
+            <div>
+                <p class="text-gray-600 text-sm font-semibold">Gender</p>
+                <p class="text-gray-900 font-semibold">{{ livestock.gender|title if livestock.gender else 'Not specified' }}</p>
+            </div>
+            <div>
+                <p class="text-gray-600 text-sm font-semibold">Birth Date</p>
+                <p class="text-gray-900 font-semibold">{{ livestock.birth_date.strftime('%B %d, %Y') if livestock.birth_date else 'Not recorded' }}</p>
+            </div>
+            <div>
+                <p class="text-gray-600 text-sm font-semibold">Location</p>
+                <p class="text-gray-900 font-semibold">{{ livestock.location_description or 'Not specified' }}</p>
+            </div>
+            <div>
+                <p class="text-gray-600 text-sm font-semibold">Acquisition Date</p>
+                <p class="text-gray-900 font-semibold">{{ livestock.acquisition_date.strftime('%B %d, %Y') if livestock.acquisition_date else 'N/A' }}</p>
+            </div>
+            <div>
+                <p class="text-gray-600 text-sm font-semibold">Source</p>
+                <p class="text-gray-900 font-semibold">{{ livestock.source or 'Not recorded' }}</p>
+            </div>
+        </div>
+        {% if livestock.notes %}
+        <div class="mt-4 pt-4 border-t">
+            <p class="text-gray-600 text-sm font-semibold">Notes</p>
+            <p class="text-gray-900">{{ livestock.notes }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="flex gap-2 mb-6 border-b overflow-x-auto" id="tabs-nav">
+        <button class="tab-button px-6 py-3 font-semibold text-gray-700 border-b-2 border-green-600 cursor-pointer whitespace-nowrap" 
+                data-tab="health" onclick="switchTab(event, 'health')">
+            <i class="fas fa-heartbeat"></i> Health & Vaccines
+        </button>
+        <button class="tab-button px-6 py-3 font-semibold text-gray-700 border-b-2 border-transparent cursor-pointer hover:border-gray-300 whitespace-nowrap" 
+                data-tab="nutrition" onclick="switchTab(event, 'nutrition')">
+            <i class="fas fa-utensils"></i> Nutrition & Feed
+        </button>
+        <button class="tab-button px-6 py-3 font-semibold text-gray-700 border-b-2 border-transparent cursor-pointer hover:border-gray-300 whitespace-nowrap" 
+                data-tab="productivity" onclick="switchTab(event, 'productivity')">
+            <i class="fas fa-chart-line"></i> Productivity
+        </button>
+        <button class="tab-button px-6 py-3 font-semibold text-gray-700 border-b-2 border-transparent cursor-pointer hover:border-gray-300 whitespace-nowrap" 
+                data-tab="supply" onclick="switchTab(event, 'supply')">
+            <i class="fas fa-boxes"></i> Supply Usage
+            {% if supply_usages %}<span class="ml-1 bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">{{ supply_usages|length }}</span>{% endif %}
+        </button>
+        <button class="tab-button px-6 py-3 font-semibold text-gray-700 border-b-2 border-transparent cursor-pointer hover:border-gray-300 whitespace-nowrap" 
+                data-tab="events" onclick="switchTab(event, 'events')">
+            <i class="fas fa-history"></i> Events
+            {% if events %}<span class="ml-1 bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">{{ events|length }}</span>{% endif %}
+        </button>
+        <button class="tab-button px-6 py-3 font-semibold text-gray-700 border-b-2 border-transparent cursor-pointer hover:border-gray-300 whitespace-nowrap" 
+                data-tab="weight" onclick="switchTab(event, 'weight')">
+            <i class="fas fa-weight"></i> Weight History
+            {% if weight_logs %}<span class="ml-1 bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-full">{{ weight_logs|length }}</span>{% endif %}
+        </button>
+    </div>
+
+    <!-- Health & Vaccines Tab -->
+    <div id="health-tab" class="tab-content">
+        <div class="card p-6 mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Health & Medical Records</h2>
+                <button onclick="showHealthModal()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                    <i class="fas fa-plus"></i> Add Record
+                </button>
+            </div>
+
+            <!-- Upcoming Vaccines Alert -->
+            {% if upcoming_vaccines %}
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded">
+                <h3 class="text-blue-800 font-semibold mb-2">📅 Upcoming Vaccinations</h3>
+                <div class="space-y-2">
+                    {% for vaccine in upcoming_vaccines %}
+                    <div class="text-blue-700 text-sm flex justify-between">
+                        <span><strong>{{ vaccine.name }}</strong> - {{ vaccine.dosage or '' }}</span>
+                        <span class="bg-blue-200 px-3 py-1 rounded text-xs">Due: {{ vaccine.next_due_date.strftime('%b %d, %Y') }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if health %}
+            <div class="space-y-4">
+                {% for record in health %}
+                <div class="border-l-4 {% if record.record_type == 'vaccine' %}border-green-500{% elif record.record_type == 'medication' %}border-red-500{% elif record.record_type == 'vitamin' %}border-yellow-500{% else %}border-blue-500{% endif %} p-4 bg-gray-50 rounded">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3">
+                                <span class="px-3 py-1 rounded-full text-xs font-semibold
+                                    {% if record.record_type == 'vaccine' %}
+                                    bg-green-100 text-green-800
+                                    {% elif record.record_type == 'medication' %}
+                                    bg-red-100 text-red-800
+                                    {% elif record.record_type == 'vitamin' %}
+                                    bg-yellow-100 text-yellow-800
+                                    {% else %}
+                                    bg-blue-100 text-blue-800
+                                    {% endif %}
+                                ">
+                                    {{ record.record_type|title }}
+                                </span>
+                                <h3 class="font-bold text-gray-900">{{ record.name }}</h3>
+                                {% if record.vaccine_inventory %}
+                                <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">From Inventory</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-gray-600 text-sm mt-2">
+                                Administered: <strong>{{ record.date_administered.strftime('%B %d, %Y') }}</strong>
+                                {% if record.next_due_date %}
+                                | Next Due: <strong>{{ record.next_due_date.strftime('%B %d, %Y') }}</strong>
+                                {% endif %}
+                            </p>
+                            {% if record.dosage %}
+                            <p class="text-gray-600 text-sm">Dosage: <strong>{{ record.dosage }}</strong></p>
+                            {% endif %}
+                            {% if record.vaccine_inventory %}
+                            <div class="mt-2 text-sm bg-white p-2 rounded border border-blue-200">
+                                <p class="text-gray-700"><strong>Vaccine Source:</strong> {{ record.vaccine_inventory.vaccine_name }}</p>
+                                <p class="text-gray-600"><strong>Batch:</strong> {{ record.vaccine_inventory.vaccine_code or 'N/A' }} | <strong>Expiry:</strong> {{ record.vaccine_inventory.expiry_date.strftime('%B %d, %Y') if record.vaccine_inventory.expiry_date else 'N/A' }}</p>
+                            </div>
+                            {% endif %}
+                            {% if record.veterinarian_name %}
+                            <p class="text-gray-600 text-sm">Provider: <strong>{{ record.veterinarian_name }}</strong>
+                                {% if record.clinic_name %} @ {{ record.clinic_name }}{% endif %}
+                            </p>
+                            {% endif %}
+                            {% if record.cost %}
+                            <p class="text-gray-600 text-sm">Cost: <strong>₱{{ "%.2f"|format(record.cost) }}</strong></p>
+                            {% endif %}
+                            {% if record.description %}
+                            <p class="text-gray-700 text-sm mt-2">{{ record.description }}</p>
+                            {% endif %}
+                        </div>
+                        <form method="POST" action="{{ url_for('livestock.delete_health_record', record_id=record.id) }}" 
+                              onsubmit="return confirm('Delete this record?');" style="display: inline;">
+                            <button type="submit" class="text-red-600 hover:text-red-800 text-sm ml-4">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-500 text-center py-8">No health records yet</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Nutrition & Feed Tab -->
+    <div id="nutrition-tab" class="tab-content hidden">
+        <div class="card p-6 mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Nutrition & Feeding</h2>
+                <button onclick="showNutritionModal()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                    <i class="fas fa-plus"></i> Add Feed
+                </button>
+            </div>
+
+            {% if nutrition %}
+            <div class="space-y-4">
+                {% for record in nutrition %}
+                <div class="border-l-4 border-orange-500 p-4 bg-gray-50 rounded">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h3 class="font-bold text-gray-900 text-lg">{{ record.food_type|title }}</h3>
+                            {% if record.description %}
+                            <p class="text-gray-600 text-sm">{{ record.description }}</p>
+                            {% endif %}
+                            <div class="grid grid-cols-2 gap-3 mt-3 text-sm">
+                                <div>
+                                    <p class="text-gray-600">Daily Quantity</p>
+                                    <p class="font-semibold">{{ record.quantity_kg }} {{ record.quantity_unit }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-gray-600">Frequency</p>
+                                    <p class="font-semibold">{{ record.feeding_frequency or 'Not specified' }}</p>
+                                </div>
+                                {% if record.cost_per_unit %}
+                                <div>
+                                    <p class="text-gray-600">Cost per Unit</p>
+                                    <p class="font-semibold">₱{{ "%.2f"|format(record.cost_per_unit) }}</p>
+                                </div>
+                                {% endif %}
+                                {% if record.supplier_name %}
+                                <div>
+                                    <p class="text-gray-600">Supplier</p>
+                                    <p class="font-semibold">{{ record.supplier_name }}</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <p class="text-gray-600 text-sm mt-2">
+                                Started: {{ record.start_date.strftime('%B %d, %Y') }}
+                                {% if record.is_active %}
+                                <span class="ml-2 px-2 py-1 rounded-full bg-green-100 text-green-800 text-xs font-semibold">Active</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <form method="POST" action="{{ url_for('livestock.delete_nutrition_record', record_id=record.id) }}" 
+                              onsubmit="return confirm('Delete this record?');" style="display: inline;">
+                            <button type="submit" class="text-red-600 hover:text-red-800 text-sm ml-4">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-500 text-center py-8">No nutrition records yet</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Productivity Tab -->
+    <div id="productivity-tab" class="tab-content hidden">
+        <div class="card p-6 mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Productivity Records</h2>
+                <button onclick="showProductivityModal()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                    <i class="fas fa-plus"></i> Add Record
+                </button>
+            </div>
+
+            {% if productivity %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-700">Date</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-700">Metric</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-700">Quantity</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-700">Market Value</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-700">Notes</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-700">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in productivity %}
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-4 py-3">{{ record.record_date.strftime('%b %d, %Y') }}</td>
+                            <td class="px-4 py-3 font-semibold">{{ record.metric_type|replace('_', ' ')|title }}</td>
+                            <td class="px-4 py-3">{{ record.quantity }} {{ record.unit }}</td>
+                            <td class="px-4 py-3">
+                                {% if record.market_value %}
+                                ₱{{ "%.2f"|format(record.market_value) }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-gray-600">{{ record.notes or '-' }}</td>
+                            <td class="px-4 py-3">
+                                <form method="POST" action="{{ url_for('livestock.delete_productivity_record', record_id=record.id) }}" 
+                                      onsubmit="return confirm('Delete this record?');" style="display: inline;">
+                                    <button type="submit" class="text-red-600 hover:text-red-800 text-sm">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-gray-500 text-center py-8">No productivity records yet</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Supply Usage Tab (appended after productivity tab content) -->
+<div id="supply-tab" class="tab-content hidden container mx-auto px-4 pb-8">
+    <div class="card p-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Supply Usage Applied to This Livestock</h2>
+        {% if supply_usages %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-100 border-b">
+                    <tr>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Date</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Supply Item</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Type</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Qty Used</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Usage Type</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Notes</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for usage in supply_usages %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 font-semibold text-gray-900">{{ usage.usage_date.strftime('%b %d, %Y') }}</td>
+                        <td class="px-4 py-3 font-medium text-gray-900">{{ usage.farm_supply.item_name }}</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 rounded text-xs font-semibold bg-orange-100 text-orange-800">{{ usage.farm_supply.item_type|title }}</span>
+                        </td>
+                        <td class="px-4 py-3 font-bold text-red-600">{{ '%.1f'|format(usage.quantity_used) }} {{ usage.farm_supply.unit }}</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-800">
+                                {% if usage.usage_type == 'livestock_health' %}Treatment
+                                {% elif usage.usage_type == 'livestock_feeding' %}Feeding
+                                {% else %}{{ usage.usage_type|title }}{% endif %}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-gray-600">{{ usage.notes or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-4 pt-4 border-t border-gray-200">
+            <p class="text-sm text-gray-500">Total supply applications: <strong>{{ supply_usages|length }}</strong> &nbsp;|&nbsp;
+            Total quantity: <strong>{{ '%.1f'|format(supply_usages|map(attribute='quantity_used')|sum) }}</strong> units
+            </p>
+        </div>
+        {% else %}
+        <div class="text-center py-12 bg-gray-50 rounded-lg">
+            <i class="fas fa-boxes text-4xl text-gray-300 mb-4"></i>
+            <p class="text-gray-600">No supply items have been applied to this livestock yet.</p>
+            <p class="text-sm text-gray-500 mt-1">Use <strong>My Inventory</strong> → Mark Used to record supply applications.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Events Tab -->
+<div id="events-tab" class="tab-content hidden container mx-auto px-4 pb-8">
+    <div class="card p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">Death, Sale & Transfer Events</h2>
+            <div class="flex gap-4 text-sm">
+                <span class="bg-red-50 text-red-700 px-3 py-1 rounded-full font-semibold">
+                    <i class="fas fa-skull-crossbones mr-1"></i>Deaths: {{ total_deaths }}
+                </span>
+                <span class="bg-green-50 text-green-700 px-3 py-1 rounded-full font-semibold">
+                    <i class="fas fa-peso-sign mr-1"></i>Revenue: ₱{{ '{:,.2f}'.format(total_revenue) }}
+                </span>
+            </div>
+        </div>
+        {% if events %}
+        <div class="space-y-3">
+            {% for ev in events %}
+            <div class="border-l-4 {% if ev.event_type == 'death' %}border-red-500 bg-red-50{% elif ev.event_type == 'sale' %}border-green-500 bg-green-50{% else %}border-blue-500 bg-blue-50{% endif %} p-4 rounded-r-lg">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <div class="flex items-center gap-3">
+                            <span class="px-2 py-0.5 rounded-full text-xs font-bold
+                                {% if ev.event_type == 'death' %}bg-red-200 text-red-800
+                                {% elif ev.event_type == 'sale' %}bg-green-200 text-green-800
+                                {% else %}bg-blue-200 text-blue-800{% endif %}">
+                                {{ ev.event_type|title }}
+                            </span>
+                            <span class="font-semibold text-gray-800">{{ ev.count_affected }} head</span>
+                            <span class="text-gray-500 text-sm">{{ ev.event_date.strftime('%B %d, %Y') }}</span>
+                        </div>
+                        {% if ev.event_type == 'death' and ev.cause_of_death %}
+                        <p class="text-sm text-gray-600 mt-1">Cause: <strong>{{ ev.cause_of_death|title }}</strong></p>
+                        {% endif %}
+                        {% if ev.event_type == 'sale' %}
+                        {% if ev.buyer_name %}<p class="text-sm text-gray-600 mt-1">Buyer: <strong>{{ ev.buyer_name }}</strong>{% if ev.buyer_contact %} · {{ ev.buyer_contact }}{% endif %}</p>{% endif %}
+                        {% if ev.price_per_head %}<p class="text-sm text-gray-600">Price: <strong>₱{{ '{:,.2f}'.format(ev.price_per_head) }}/head</strong> → Total: <strong class="text-green-700">₱{{ '{:,.2f}'.format(ev.total_revenue or 0) }}</strong></p>{% endif %}
+                        {% endif %}
+                        {% if ev.notes %}<p class="text-sm text-gray-500 mt-1 italic">{{ ev.notes }}</p>{% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-12 bg-gray-50 rounded-lg">
+            <i class="fas fa-history text-4xl text-gray-300 mb-4"></i>
+            <p class="text-gray-600">No events recorded yet.</p>
+            <p class="text-sm text-gray-500 mt-1">Use "Record Death" or "Record Sale" buttons to log events.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Weight History Tab -->
+<div id="weight-tab" class="tab-content hidden container mx-auto px-4 pb-8">
+    <div class="card p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">Weight History</h2>
+            {% if user.role == 'farmer' and livestock.farm.owner_id == user.id %}
+            <button onclick="document.getElementById('weightModal').classList.remove('hidden')"
+                class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
+                <i class="fas fa-plus"></i> Log Weight
+            </button>
+            {% endif %}
+        </div>
+        {% if weight_logs %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-100 border-b">
+                    <tr>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Date</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Weight (kg)</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Notes</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for wl in weight_logs %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 font-semibold text-gray-900">{{ wl.weighed_at.strftime('%B %d, %Y') }}</td>
+                        <td class="px-4 py-3 font-bold text-purple-700">{{ wl.weight_kg }} kg</td>
+                        <td class="px-4 py-3 text-gray-500">{{ wl.notes or '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12 bg-gray-50 rounded-lg">
+            <i class="fas fa-weight text-4xl text-gray-300 mb-4"></i>
+            <p class="text-gray-600">No weight logs yet.</p>
+            <p class="text-sm text-gray-500 mt-1">Click "Log Weight" to record a weight snapshot.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Death Modal -->
+<div id="deathModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+        <div class="flex justify-between items-center p-6 border-b">
+            <h2 class="text-xl font-bold text-red-700"><i class="fas fa-skull-crossbones mr-2"></i>Record Animal Death</h2>
+            <button onclick="document.getElementById('deathModal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times text-xl"></i></button>
+        </div>
+        <form method="POST" action="{{ url_for('livestock.record_death', livestock_id=livestock.id) }}" class="p-6 space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Date of Death</label>
+                <input type="date" name="event_date" id="deathDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg" required>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Number of Animals that Died (max: {{ livestock.count }})</label>
+                <input type="number" name="count_died" class="w-full px-3 py-2 border border-gray-300 rounded-lg" min="1" max="{{ livestock.count }}" value="1" required>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Cause of Death</label>
+                <select name="cause_of_death" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <option value="">Select cause</option>
+                    <option value="disease">Disease</option>
+                    <option value="accident">Accident / Injury</option>
+                    <option value="natural">Natural / Old Age</option>
+                    <option value="culled">Culled</option>
+                    <option value="unknown">Unknown</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Notes</label>
+                <textarea name="notes" class="w-full px-3 py-2 border border-gray-300 rounded-lg" rows="2" placeholder="Additional details..."></textarea>
+            </div>
+            <div class="flex gap-3 pt-2 border-t">
+                <button type="button" onclick="document.getElementById('deathModal').classList.add('hidden')" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-semibold">Cancel</button>
+                <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold">Record Death</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Sale Modal -->
+<div id="saleModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+        <div class="flex justify-between items-center p-6 border-b">
+            <h2 class="text-xl font-bold text-green-700"><i class="fas fa-tags mr-2"></i>Record Animal Sale</h2>
+            <button onclick="document.getElementById('saleModal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times text-xl"></i></button>
+        </div>
+        <form method="POST" action="{{ url_for('livestock.record_sale', livestock_id=livestock.id) }}" class="p-6 space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Date of Sale</label>
+                <input type="date" name="event_date" id="saleDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg" required>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Number Sold (max: {{ livestock.count }})</label>
+                <input type="number" name="count_sold" class="w-full px-3 py-2 border border-gray-300 rounded-lg" min="1" max="{{ livestock.count }}" value="1" required>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Price per Head (₱)</label>
+                    <input type="number" name="price_per_head" class="w-full px-3 py-2 border border-gray-300 rounded-lg" step="0.01" min="0" placeholder="0.00">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Buyer Name</label>
+                    <input type="text" name="buyer_name" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Optional">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Buyer Contact</label>
+                <input type="text" name="buyer_contact" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Phone / address (optional)">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Notes</label>
+                <textarea name="notes" class="w-full px-3 py-2 border border-gray-300 rounded-lg" rows="2" placeholder="Additional details..."></textarea>
+            </div>
+            <div class="flex gap-3 pt-2 border-t">
+                <button type="button" onclick="document.getElementById('saleModal').classList.add('hidden')" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-semibold">Cancel</button>
+                <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold">Confirm Sale</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Weight Log Modal -->
+<div id="weightModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+        <div class="flex justify-between items-center p-6 border-b">
+            <h2 class="text-xl font-bold text-purple-700"><i class="fas fa-weight mr-2"></i>Log Weight</h2>
+            <button onclick="document.getElementById('weightModal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times text-xl"></i></button>
+        </div>
+        <form method="POST" action="{{ url_for('livestock.log_weight', livestock_id=livestock.id) }}" class="p-6 space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Date Weighed</label>
+                <input type="date" name="weighed_at" id="weightDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg" required>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Weight (kg)</label>
+                <input type="number" name="weight_kg" class="w-full px-3 py-2 border border-gray-300 rounded-lg" step="0.1" min="0.1" placeholder="e.g., 125.5" required>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Notes</label>
+                <input type="text" name="notes" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Optional">
+            </div>
+            <div class="flex gap-3 pt-2 border-t">
+                <button type="button" onclick="document.getElementById('weightModal').classList.add('hidden')" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-semibold">Cancel</button>
+                <button type="submit" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-semibold">Save Weight</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="healthModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-96 overflow-y-auto">
+        <div class="flex justify-between items-center p-6 border-b">
+            <h2 class="text-2xl font-bold text-gray-800">Add Health Record</h2>
+            <button onclick="closeHealthModal()" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <form method="POST" action="{{ url_for('livestock.add_health_record', livestock_id=livestock.id) }}" class="p-6 space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Record Type</label>
+                    <select name="record_type" id="recordType" class="w-full px-3 py-2 border border-gray-300 rounded-lg" required onchange="updateVaccineField()">
+                        {% for type_key, type_name in record_types.items() %}
+                        <option value="{{ type_key }}">{{ type_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Vaccine Selection (shown only when vaccine type selected) -->
+                <div id="vaccineSelectDiv" class="hidden">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Select Vaccine from Inventory</label>
+                    <select name="vaccine_inventory_id" id="vaccineSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="updateVaccineInfo()">
+                        <option value="">-- Choose Vaccine --</option>
+                    </select>
+                </div>
+                
+                <!-- Manual Name Field (shown when vaccine is not selected) -->
+                <div id="nameInputDiv">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Name/Description</label>
+                    <input type="text" name="name" id="nameInput" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., FMD Vaccine" required>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Dosage</label>
+                    <input type="text" name="dosage" id="dosageInput" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., 1 mL">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Date Administered</label>
+                    <input type="date" name="date_administered" class="w-full px-3 py-2 border border-gray-300 rounded-lg" required>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Next Due Date</label>
+                    <input type="date" name="next_due_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Veterinarian Name</label>
+                    <input type="text" name="veterinarian_name" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Clinic Name</label>
+                    <input type="text" name="clinic_name" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Cost</label>
+                    <input type="number" name="cost" id="costInput" class="w-full px-3 py-2 border border-gray-300 rounded-lg" step="0.01" min="0">
+                </div>
+
+                <div class="col-span-2">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                    <textarea name="description" class="w-full px-3 py-2 border border-gray-300 rounded-lg" rows="2"></textarea>
+                </div>
+            </div>
+
+            <div class="flex gap-3 pt-4 border-t">
+                <button type="button" onclick="closeHealthModal()" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-semibold">Cancel</button>
+                <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold">Add Record</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Nutrition Record Modal -->
+<div id="nutritionModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-96 overflow-y-auto">
+        <div class="flex justify-between items-center p-6 border-b">
+            <h2 class="text-2xl font-bold text-gray-800">Add Feeding Record</h2>
+            <button onclick="closeNutritionModal()" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <form method="POST" action="{{ url_for('livestock.add_nutrition_record', livestock_id=livestock.id) }}" class="p-6 space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Food Type</label>
+                    <input type="text" name="food_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., Pellet Feed" required>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Quantity Daily</label>
+                    <input type="number" name="quantity_kg" class="w-full px-3 py-2 border border-gray-300 rounded-lg" step="0.1" min="0" placeholder="Amount" required>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Unit</label>
+                    <select name="quantity_unit" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="kg">kg</option>
+                        <option value="g">g</option>
+                        <option value="liters">liters</option>
+                        <option value="pcs">pieces</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Feeding Frequency</label>
+                    <input type="text" name="feeding_frequency" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., 2x daily">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Feeding Time</label>
+                    <input type="text" name="feeding_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., Morning, Afternoon">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Cost per Unit</label>
+                    <input type="number" name="cost_per_unit" class="w-full px-3 py-2 border border-gray-300 rounded-lg" step="0.01" min="0">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Supplier Name</label>
+                    <input type="text" name="supplier_name" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Supplier Contact</label>
+                    <input type="text" name="supplier_contact" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+
+                <div class="col-span-2">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Active</label>
+                    <input type="checkbox" name="is_active" class="mt-2" checked>
+                </div>
+
+                <div class="col-span-2">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Notes</label>
+                    <textarea name="notes" class="w-full px-3 py-2 border border-gray-300 rounded-lg" rows="2"></textarea>
+                </div>
+            </div>
+
+            <div class="flex gap-3 pt-4 border-t">
+                <button type="button" onclick="closeNutritionModal()" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-semibold">Cancel</button>
+                <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold">Add Record</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Productivity Record Modal -->
+<div id="productivityModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-96 overflow-y-auto">
+        <div class="flex justify-between items-center p-6 border-b">
+            <h2 class="text-2xl font-bold text-gray-800">Add Productivity Record</h2>
+            <button onclick="closeProductivityModal()" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <form method="POST" action="{{ url_for('livestock.add_productivity_record', livestock_id=livestock.id) }}" class="p-6 space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Metric Type</label>
+                    <select name="metric_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg" required>
+                        {% for type_key, type_name in productivity_types.items() %}
+                        <option value="{{ type_key }}">{{ type_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Quantity</label>
+                    <input type="number" name="quantity" class="w-full px-3 py-2 border border-gray-300 rounded-lg" step="0.1" min="0" required>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Unit</label>
+                    <input type="text" name="unit" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., pcs, liters, kg" required>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Record Date</label>
+                    <input type="date" name="record_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" required>
+                </div>
+
+                <div class="col-span-2">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Market Value (₱)</label>
+                    <input type="number" name="market_value" class="w-full px-3 py-2 border border-gray-300 rounded-lg" step="0.01" min="0">
+                </div>
+
+                <div class="col-span-2">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Notes</label>
+                    <textarea name="notes" class="w-full px-3 py-2 border border-gray-300 rounded-lg" rows="2"></textarea>
+                </div>
+            </div>
+
+            <div class="flex gap-3 pt-4 border-t">
+                <button type="button" onclick="closeProductivityModal()" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-semibold">Cancel</button>
+                <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold">Add Record</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function showHealthModal() {
+    document.getElementById('healthModal').classList.remove('hidden');
+    updateVaccineField();
+}
+
+function closeHealthModal() {
+    document.getElementById('healthModal').classList.add('hidden');
+}
+
+function updateVaccineField() {
+    const recordType = document.getElementById('recordType').value;
+    const vaccineSelectDiv = document.getElementById('vaccineSelectDiv');
+    const nameInputDiv = document.getElementById('nameInputDiv');
+    const nameInput = document.getElementById('nameInput');
+    
+    if (recordType === 'vaccine') {
+        // Show vaccine selector, hide name input
+        vaccineSelectDiv.classList.remove('hidden');
+        nameInputDiv.classList.add('hidden');
+        nameInput.removeAttribute('required');
+        
+        // Load available vaccines
+        loadAvailableVaccines();
+    } else {
+        // Hide vaccine selector, show name input
+        vaccineSelectDiv.classList.add('hidden');
+        nameInputDiv.classList.remove('hidden');
+        nameInput.setAttribute('required', 'required');
+        nameInput.value = '';
+    }
+}
+
+function loadAvailableVaccines() {
+    const farmId = {{ livestock.farm_id }};
+    
+    fetch(`{{ url_for('livestock.get_available_vaccines') }}?farm_id=${farmId}`)
+        .then(response => response.json())
+        .then(data => {
+            const vaccineSelect = document.getElementById('vaccineSelect');
+            const currentValue = vaccineSelect.value;
+            
+            // Clear existing options except first
+            while (vaccineSelect.options.length > 1) {
+                vaccineSelect.remove(1);
+            }
+            
+            // Add new options
+            if (data.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.text = '-- No vaccines available --';
+                option.disabled = true;
+                vaccineSelect.appendChild(option);
+            } else {
+                data.forEach(vaccine => {
+                    const option = document.createElement('option');
+                    option.value = vaccine.id;
+                    option.text = `${vaccine.vaccine_name} (${vaccine.quantity_remaining}/${vaccine.quantity_remaining + 0 || '?'} ${vaccine.unit_type}${vaccine.quantity_remaining !== 1 ? 's' : ''}) - Expires: ${vaccine.expiry_date || 'N/A'}`;
+                    option.dataset.cost = vaccine.cost_per_unit || 0;
+                    option.dataset.vaccineName = vaccine.vaccine_name;
+                    option.dataset.unitType = vaccine.unit_type;
+                    vaccineSelect.appendChild(option);
+                });
+            }
+            
+            // Restore previous selection if it still exists
+            vaccineSelect.value = currentValue;
+        })
+        .catch(error => {
+            console.error('Error loading vaccines:', error);
+            alert('Error loading available vaccines');
+        });
+}
+
+function updateVaccineInfo() {
+    const vaccineSelect = document.getElementById('vaccineSelect');
+    const selectedOption = vaccineSelect.options[vaccineSelect.selectedIndex];
+    
+    if (selectedOption.value) {
+        // Auto-fill dosage and cost
+        const dosageInput = document.getElementById('dosageInput');
+        const costInput = document.getElementById('costInput');
+        const nameInput = document.getElementById('nameInput');
+        
+        dosageInput.value = `1 ${selectedOption.dataset.unitType}`;
+        if (selectedOption.dataset.cost) {
+            costInput.value = parseFloat(selectedOption.dataset.cost).toFixed(2);
+        }
+        // Name is auto-populated on vaccine inventory link, not needed here
+    }
+}
+
+function showNutritionModal() {
+    document.getElementById('nutritionModal').classList.remove('hidden');
+}
+
+function closeNutritionModal() {
+    document.getElementById('nutritionModal').classList.add('hidden');
+}
+
+function showProductivityModal() {
+    document.getElementById('productivityModal').classList.remove('hidden');
+}
+
+function closeProductivityModal() {
+    document.getElementById('productivityModal').classList.add('hidden');
+}
+
+function switchTab(event, tabName) {
+    event.preventDefault();
+    
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+    
+    // Remove active styling
+    document.querySelectorAll('.tab-button').forEach(el => {
+        el.classList.remove('border-green-600');
+        el.classList.add('border-transparent');
+    });
+    
+    // Show selected tab
+    document.getElementById(tabName + '-tab').classList.remove('hidden');
+    
+    // Add active styling
+    event.target.closest('.tab-button').classList.remove('border-transparent');
+    event.target.closest('.tab-button').classList.add('border-green-600');
+}
+
+// Close modals on background click
+['healthModal', 'nutritionModal', 'productivityModal', 'deathModal', 'saleModal', 'weightModal'].forEach(modalId => {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+            }
+        });
+    }
+});
+
+// Pre-fill today's date in modal date fields
+const todayStr = new Date().toISOString().split('T')[0];
+['deathDate','saleDate','weightDate'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = todayStr;
+});
+</script>
+{% endblock %}
