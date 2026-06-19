@@ -342,7 +342,6 @@ main {
 @media (min-width: 1025px) {
     main:not(.auth-page) {
         margin-left: 16rem;
-        padding-top: 2.5rem;
     }
     
     main.auth-page {

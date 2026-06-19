@@ -6,18 +6,18 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
     <!-- Welcome Section -->
     <div class="mb-12">
-        <h1 class="text-4xl font-bold text-gray-900 mb-2">
+        <h1 class="text-3xl sm:text-4xl font-display text-gray-900 mb-2">
             System Administrator Dashboard
         </h1>
         <p class="text-lg text-gray-600">
             <i class="fas fa-crown text-red-600 mr-2"></i>
-            Complete System Control & Monitoring
+            Complete System Control &amp; Monitoring
         </p>
     </div>
     
     <!-- Critical Alerts -->
     {% if inactive_users > 0 or inactive_farms > 0 %}
-    <div class="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+    <div class="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
         <div class="flex items-center">
             <i class="fas fa-exclamation-triangle text-yellow-600 text-2xl mr-4"></i>
             <div>
@@ -33,72 +33,72 @@
     {% endif %}
     
     <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
         <!-- Total Farms -->
-        <div class="card p-6 hover:shadow-lg">
+        <div class="card">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-600 text-sm">Total Farms</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ total_farms }}</p>
-                    <p class="text-xs text-gray-500 mt-1">All (Active & Inactive)</p>
+                    <p class="text-3xl font-display text-gray-900 mt-2">{{ total_farms }}</p>
+                    <p class="text-xs text-gray-500 mt-1">All (Active &amp; Inactive)</p>
                 </div>
-                <div class="text-4xl text-green-600 opacity-20">
+                <div class="stat-icon bg-green-100 text-green-600">
                     <i class="fas fa-tractor"></i>
                 </div>
             </div>
         </div>
         
         <!-- Total Users -->
-        <div class="card p-6 hover:shadow-lg">
+        <div class="card">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-600 text-sm">Total Users</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ total_users }}</p>
-                    <p class="text-xs text-gray-500 mt-1">All (Active & Inactive)</p>
+                    <p class="text-3xl font-display text-gray-900 mt-2">{{ total_users }}</p>
+                    <p class="text-xs text-gray-500 mt-1">All (Active &amp; Inactive)</p>
                 </div>
-                <div class="text-4xl text-blue-600 opacity-20">
+                <div class="stat-icon bg-blue-100 text-blue-600">
                     <i class="fas fa-users"></i>
                 </div>
             </div>
         </div>
         
         <!-- Total Area -->
-        <div class="card p-6 hover:shadow-lg">
+        <div class="card">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-600 text-sm">Total Area</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ "%.0f"|format(total_area) }} m²</p>
+                    <p class="text-3xl font-display text-gray-900 mt-2">{{ "%.0f"|format(total_area) }} m²</p>
                     <p class="text-xs text-gray-500 mt-1">Active Farms</p>
                 </div>
-                <div class="text-4xl text-yellow-600 opacity-20">
+                <div class="stat-icon bg-yellow-100 text-yellow-600">
                     <i class="fas fa-map"></i>
                 </div>
             </div>
         </div>
         
         <!-- Active Users -->
-        <div class="card p-6 hover:shadow-lg">
+        <div class="card">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-600 text-sm">Active Users</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ active_users }}</p>
+                    <p class="text-3xl font-display text-gray-900 mt-2">{{ active_users }}</p>
                     <p class="text-xs text-gray-500 mt-1">of {{ total_users }} total</p>
                 </div>
-                <div class="text-4xl text-purple-600 opacity-20">
+                <div class="stat-icon bg-purple-100 text-purple-600">
                     <i class="fas fa-check-circle"></i>
                 </div>
             </div>
         </div>
 
         <!-- Total Livestock -->
-        <div class="card p-6 hover:shadow-lg">
+        <div class="card">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-600 text-sm">Total Animals</p>
-                    <p class="text-3xl font-bold text-amber-700 mt-2">{{ total_livestock }}</p>
+                    <p class="text-3xl font-display text-amber-700 mt-2">{{ total_livestock }}</p>
                     <p class="text-xs text-gray-500 mt-1">All livestock</p>
                 </div>
-                <div class="text-4xl text-amber-600 opacity-20">
+                <div class="stat-icon bg-amber-100 text-amber-600">
                     <i class="fas fa-cow"></i>
                 </div>
             </div>
@@ -106,56 +106,56 @@
     </div>
     
     <!-- Health Metrics Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <!-- Animals with Diseases -->
-        <div class="card p-6 hover:shadow-lg border-l-4 border-red-500">
+        <div class="card border-l-4 border-red-500">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-600 text-sm">Animals with Diseases</p>
-                    <p class="text-3xl font-bold text-red-600 mt-2">{{ animals_with_diseases }}</p>
+                    <p class="text-3xl font-display text-red-600 mt-2">{{ animals_with_diseases }}</p>
                 </div>
-                <div class="text-4xl text-red-600 opacity-20">
+                <div class="stat-icon bg-red-100 text-red-600">
                     <i class="fas fa-virus"></i>
                 </div>
             </div>
         </div>
         
         <!-- Vaccines Due -->
-        <div class="card p-6 hover:shadow-lg border-l-4 border-yellow-500">
+        <div class="card border-l-4 border-yellow-500">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-600 text-sm">Vaccines Due (7 days)</p>
-                    <p class="text-3xl font-bold text-yellow-600 mt-2">{{ upcoming_vaccines }}</p>
+                    <p class="text-3xl font-display text-yellow-600 mt-2">{{ upcoming_vaccines }}</p>
                 </div>
-                <div class="text-4xl text-yellow-600 opacity-20">
+                <div class="stat-icon bg-yellow-100 text-yellow-600">
                     <i class="fas fa-syringe"></i>
                 </div>
             </div>
         </div>
         
         <!-- Vaccine Inventory -->
-        <div class="card p-6 hover:shadow-lg border-l-4 border-green-500">
+        <div class="card border-l-4 border-green-500">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-600 text-sm">Vaccine Stock</p>
-                    <p class="text-3xl font-bold text-green-600 mt-2">{{ vaccines_count }}</p>
+                    <p class="text-3xl font-display text-green-600 mt-2">{{ vaccines_count }}</p>
                     <p class="text-xs text-red-600 mt-1">{{ expired_vaccines }} expired, {{ expiring_soon_vaccines }} expiring</p>
                 </div>
-                <div class="text-4xl text-green-600 opacity-20">
+                <div class="stat-icon bg-green-100 text-green-600">
                     <i class="fas fa-box"></i>
                 </div>
             </div>
         </div>
         
         <!-- Health Alerts -->
-        <div class="card p-6 hover:shadow-lg border-l-4 border-orange-500">
+        <div class="card border-l-4 border-orange-500">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-600 text-sm">Health Alerts</p>
-                    <p class="text-3xl font-bold text-orange-600 mt-2">{{ total_health_alerts }}</p>
+                    <p class="text-3xl font-display text-orange-600 mt-2">{{ total_health_alerts }}</p>
                     <p class="text-xs text-red-600 mt-1">{{ critical_alerts }} critical</p>
                 </div>
-                <div class="text-4xl text-orange-600 opacity-20">
+                <div class="stat-icon bg-orange-100 text-orange-600">
                     <i class="fas fa-exclamation-circle"></i>
                 </div>
             </div>
@@ -163,43 +163,43 @@
     </div>
     
     <!-- System Health -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <!-- Verified Users -->
-        <div class="card p-6 bg-gradient-to-br from-green-50 to-transparent border-l-4 border-green-500">
+        <div class="card bg-gradient-to-br from-green-50 to-transparent border-l-4 border-green-500">
             <p class="text-gray-600 text-sm">Verified Users</p>
-            <p class="text-3xl font-bold text-green-600 mt-2">{{ verified_users }}</p>
+            <p class="text-3xl font-display text-green-600 mt-2">{{ verified_users }}</p>
         </div>
         
         <!-- Inactive Users -->
-        <div class="card p-6 bg-gradient-to-br from-orange-50 to-transparent border-l-4 border-orange-500">
+        <div class="card bg-gradient-to-br from-orange-50 to-transparent border-l-4 border-orange-500">
             <p class="text-gray-600 text-sm">Inactive Users</p>
-            <p class="text-3xl font-bold text-orange-600 mt-2">{{ inactive_users }}</p>
+            <p class="text-3xl font-display text-orange-600 mt-2">{{ inactive_users }}</p>
         </div>
         
         <!-- Inactive Farms -->
-        <div class="card p-6 bg-gradient-to-br from-red-50 to-transparent border-l-4 border-red-500">
+        <div class="card bg-gradient-to-br from-red-50 to-transparent border-l-4 border-red-500">
             <p class="text-gray-600 text-sm">Inactive Farms</p>
-            <p class="text-3xl font-bold text-red-600 mt-2">{{ inactive_farms }}</p>
+            <p class="text-3xl font-display text-red-600 mt-2">{{ inactive_farms }}</p>
         </div>
         
         <!-- User Roles -->
-        <div class="card p-6 bg-gradient-to-br from-blue-50 to-transparent border-l-4 border-blue-500">
+        <div class="card bg-gradient-to-br from-blue-50 to-transparent border-l-4 border-blue-500">
             <p class="text-gray-600 text-sm">User Roles</p>
-            <p class="text-3xl font-bold text-blue-600 mt-2">{{ role_counts|length }}</p>
+            <p class="text-3xl font-display text-blue-600 mt-2">{{ role_counts|length }}</p>
         </div>
     </div>
     
     <!-- Management Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         <!-- Role Distribution -->
-        <div class="card p-8">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+        <div class="card">
+            <h2 class="text-2xl font-display text-gray-900 mb-6">
                 <i class="fas fa-pie-chart text-blue-600 mr-3"></i>Role Distribution
             </h2>
             
             <div class="space-y-3">
                 {% for role, count in role_counts.items() %}
-                <div class="flex items-center justify-between bg-gray-50 p-3 rounded">
+                <div class="flex items-center justify-between bg-gray-50 p-3 rounded-xl">
                     <span class="text-gray-900 font-medium capitalize">{{ role.replace('_', ' ') }}</span>
                     <span class="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">{{ count }}</span>
                 </div>
@@ -208,8 +208,8 @@
         </div>
         
         <!-- System Status -->
-        <div class="card p-8">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+        <div class="card">
+            <h2 class="text-2xl font-display text-gray-900 mb-6">
                 <i class="fas fa-heartbeat text-green-600 mr-3"></i>System Status
             </h2>
             
@@ -234,22 +234,22 @@
         </div>
         
         <!-- System Controls -->
-        <div class="card p-8">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+        <div class="card">
+            <h2 class="text-2xl font-display text-gray-900 mb-6">
                 <i class="fas fa-sliders-h text-purple-600 mr-3"></i>System Controls
             </h2>
             
             <div class="space-y-2">
-                <a href="{{ url_for('dashboard.profile') }}" class="block px-4 py-2 text-gray-900 hover:bg-gray-100 rounded transition">
+                <a href="{{ url_for('dashboard.profile') }}" class="block px-4 py-2 text-gray-900 hover:bg-gray-100 rounded-xl transition">
                     <i class="fas fa-user-circle text-green-600 mr-2"></i>View Profile
                 </a>
-                <button onclick="location.href='/dashboard/admin/users-system'" class="w-full text-left px-4 py-2 text-gray-900 hover:bg-gray-100 rounded transition font-medium text-blue-600 hover:text-blue-800">
+                <button onclick="location.href='/dashboard/admin/users-system'" class="w-full text-left px-4 py-2 text-gray-900 hover:bg-gray-100 rounded-xl transition font-medium text-blue-600 hover:text-blue-800">
                     <i class="fas fa-users-cog text-blue-600 mr-2"></i>User Management
                 </button>
-                <button onclick="location.href='/dashboard/admin/database'" class="w-full text-left px-4 py-2 text-gray-900 hover:bg-gray-100 rounded transition font-medium text-orange-600 hover:text-orange-800">
+                <button onclick="location.href='/dashboard/admin/database'" class="w-full text-left px-4 py-2 text-gray-900 hover:bg-gray-100 rounded-xl transition font-medium text-orange-600 hover:text-orange-800">
                     <i class="fas fa-database text-orange-600 mr-2"></i>Database
                 </button>
-                <button onclick="location.href='/dashboard/admin/settings-system'" class="w-full text-left px-4 py-2 text-gray-900 hover:bg-gray-100 rounded transition font-medium text-gray-600 hover:text-gray-800">
+                <button onclick="location.href='/dashboard/admin/settings-system'" class="w-full text-left px-4 py-2 text-gray-900 hover:bg-gray-100 rounded-xl transition font-medium text-gray-600 hover:text-gray-800">
                     <i class="fas fa-cog text-gray-600 mr-2"></i>System Settings
                 </button>
             </div>
@@ -259,8 +259,8 @@
     <!-- Detailed Lists -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- All Farms -->
-        <div class="card p-8">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+        <div class="card">
+            <h2 class="text-2xl font-display text-gray-900 mb-6">
                 <i class="fas fa-list text-green-600 mr-3"></i>All Farms ({{ total_farms }})
             </h2>
             
@@ -278,9 +278,9 @@
                             </p>
                         </div>
                         {% if farm.is_active %}
-                        <span class="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded">Active</span>
+                        <span class="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Active</span>
                         {% else %}
-                        <span class="inline-block px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded">Inactive</span>
+                        <span class="inline-block px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">Inactive</span>
                         {% endif %}
                     </div>
                 </div>
@@ -295,8 +295,8 @@
         </div>
         
         <!-- All Users -->
-        <div class="card p-8">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+        <div class="card">
+            <h2 class="text-2xl font-display text-gray-900 mb-6">
                 <i class="fas fa-id-card text-blue-600 mr-3"></i>All Users ({{ total_users }})
             </h2>
             
@@ -314,14 +314,14 @@
                         </div>
                         <div class="text-right text-xs">
                             {% if user.is_active %}
-                            <span class="inline-block px-2 py-1 bg-green-100 text-green-800 rounded mb-1">Active</span>
+                            <span class="inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full mb-1">Active</span>
                             {% else %}
-                            <span class="inline-block px-2 py-1 bg-gray-100 text-gray-800 rounded mb-1">Inactive</span>
+                            <span class="inline-block px-2 py-1 bg-gray-100 text-gray-800 rounded-full mb-1">Inactive</span>
                             {% endif %}
                             {% if user.is_verified %}
-                            <span class="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded">Verified</span>
+                            <span class="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded-full">Verified</span>
                             {% else %}
-                            <span class="inline-block px-2 py-1 bg-yellow-100 text-yellow-800 rounded">Unverified</span>
+                            <span class="inline-block px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">Unverified</span>
                             {% endif %}
                         </div>
                     </div>

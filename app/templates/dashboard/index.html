@@ -6,7 +6,7 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
     <!-- Welcome Section -->
     <div class="mb-12">
-        <h1 class="text-4xl font-bold text-gray-900 mb-2">
+        <h1 class="text-3xl sm:text-4xl font-display text-gray-900 mb-2">
             Welcome, <span class="text-gradient">{{ user.full_name }}</span>!
         </h1>
         <p class="text-lg text-gray-600">
@@ -19,14 +19,14 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         <!-- Quick Actions Card -->
         <div class="lg:col-span-1">
-            <div class="card p-8 h-full">
-                <h2 class="text-2xl font-bold text-gray-900 mb-6">
+            <div class="card h-full">
+                <h2 class="text-2xl font-display text-gray-900 mb-6">
                     <i class="fas fa-bolt text-blue-600 mr-3"></i>Quick Actions
                 </h2>
                 
                 <div class="space-y-3">
                     <!-- View Profile -->
-                    <a href="{{ url_for('dashboard.profile') }}" class="w-full block px-4 py-3 rounded-lg border border-gray-200 hover:bg-green-50 hover:border-green-300 transition">
+                    <a href="{{ url_for('dashboard.profile') }}" class="w-full block px-4 py-3 rounded-xl border border-gray-200 hover:bg-green-50 hover:border-green-300 transition">
                         <div class="flex items-center">
                             <i class="fas fa-user-circle text-green-600 mr-3 text-lg"></i>
                             <span class="font-medium text-gray-900">View Profile</span>
@@ -34,7 +34,7 @@
                     </a>
                     
                     <!-- View Farms -->
-                    <a href="{{ url_for('farm.list_farms') }}" class="w-full block px-4 py-3 rounded-lg border border-gray-200 hover:bg-green-50 hover:border-green-300 transition">
+                    <a href="{{ url_for('farm.list_farms') }}" class="w-full block px-4 py-3 rounded-xl border border-gray-200 hover:bg-green-50 hover:border-green-300 transition">
                         <div class="flex items-center">
                             <i class="fas fa-field text-green-600 mr-3 text-lg"></i>
                             <span class="font-medium text-gray-900">View Farms</span>
@@ -42,7 +42,7 @@
                     </a>
                     
                     <!-- Change Password -->
-                    <button class="w-full text-left px-4 py-3 rounded-lg border border-gray-200 hover:bg-orange-50 hover:border-orange-300 transition">
+                    <button class="w-full text-left px-4 py-3 rounded-xl border border-gray-200 hover:bg-orange-50 hover:border-orange-300 transition">
                         <div class="flex items-center">
                             <i class="fas fa-key text-orange-600 mr-3 text-lg"></i>
                             <span class="font-medium text-gray-900">Change Password</span>
@@ -50,7 +50,7 @@
                     </button>
                     
                     <!-- Help & Support -->
-                    <button class="w-full text-left px-4 py-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition">
+                    <button class="w-full text-left px-4 py-3 rounded-xl border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition">
                         <div class="flex items-center">
                             <i class="fas fa-life-ring text-blue-600 mr-3 text-lg"></i>
                             <span class="font-medium text-gray-900">Help & Support</span>
@@ -59,7 +59,7 @@
                 </div>
                 
                 <!-- Security Status -->
-                <div class="bg-green-50 border border-green-200 rounded-lg p-4 mt-6">
+                <div class="bg-green-50 border border-green-200 rounded-xl p-4 mt-6">
                     <p class="text-sm text-green-900 font-semibold mb-2">
                         <i class="fas fa-shield-alt mr-2"></i>Account Secure
                     </p>
@@ -72,8 +72,8 @@
 
         <!-- Recent Activity Card -->
         <div class="lg:col-span-2">
-            <div class="card p-8 h-full">
-                <h2 class="text-2xl font-bold text-gray-900 mb-6">
+            <div class="card h-full">
+                <h2 class="text-2xl font-display text-gray-900 mb-6">
                     <i class="fas fa-history text-purple-600 mr-3"></i>Account Information
                 </h2>
                 
@@ -153,9 +153,9 @@
     <!-- Feature Cards Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
         <!-- Farm Management Card -->
-        <div class="card p-8 border-2 border-green-200 bg-gradient-to-br from-green-50 to-transparent">
+        <div class="card border-2 border-green-200 bg-gradient-to-br from-green-50 to-transparent">
             <div class="flex items-start justify-between mb-4">
-                <h3 class="text-2xl font-bold text-gray-900">
+                <h3 class="text-2xl font-display text-gray-900">
                     <i class="fas fa-tractor text-green-600 mr-2"></i>Farm Management
                 </h3>
                 <span class="text-xs bg-green-100 text-green-800 px-3 py-1 rounded-full font-semibold">Active</span>
@@ -167,9 +167,9 @@
         </div>
         
         <!-- Location Mapping Card -->
-        <div class="card p-8 border-2 border-dashed border-gray-300">
+        <div class="card border-2 border-dashed border-gray-300">
             <div class="flex items-start justify-between mb-4">
-                <h3 class="text-2xl font-bold text-gray-900">
+                <h3 class="text-2xl font-display text-gray-900">
                     <i class="fas fa-map text-blue-600 mr-2"></i>Location Mapping
                 </h3>
                 <span class="text-xs bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-semibold">Coming Soon</span>

@@ -13,6 +13,10 @@
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Brand Fonts (agriculture-friendly: warm and approachable) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap">
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -37,23 +41,72 @@
         body {
             background-color: #f9fafb;
             color: var(--gray-darker);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        main {
+            margin: 0;
+            padding: 0;
+            display: block;
+            line-height: 0;
+        }
+
+        main > * {
+            line-height: normal;
+        }
+
+        .flash-messages {
+            margin: 0 !important;
+            padding: 0 !important;
+            line-height: 0;
+            font-size: 0;
+        }
+
+        .flash-messages:not(:has(.py-2)) {
+            display: none !important;
+        }
+
+        .flash-messages > div {
+            margin: 0 !important;
+            padding: 0 !important;
+            line-height: normal;
+            font-size: 1rem;
+        }
+
+        main > *:first-child,
+        main > * > *:first-child {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+
+        .navbar {
+            margin: 0;
+        }
+
+        /* ——— Brand / Display Type ——— */
+        .font-display,
+        .brand-name {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 800;
+            letter-spacing: -0.02em;
         }
         
         .btn-primary {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
             color: white;
             padding: 0.625rem 1.5rem;
-            border-radius: 0.5rem;
+            border-radius: 0.625rem;
             font-weight: 500;
-            transition: all 0.3s ease;
+            transition: all 0.25s ease;
             border: none;
             cursor: pointer;
         }
         
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
         }
         
         .btn-primary:active {
@@ -64,9 +117,9 @@
             background-color: #e5e7eb;
             color: var(--gray-darker);
             padding: 0.625rem 1.5rem;
-            border-radius: 0.5rem;
+            border-radius: 0.625rem;
             font-weight: 500;
-            transition: all 0.3s ease;
+            transition: all 0.25s ease;
             border: none;
             cursor: pointer;
         }
@@ -79,9 +132,9 @@
             width: 100%;
             padding: 0.75rem 1rem;
             border: 1.5px solid #e5e7eb;
-            border-radius: 0.5rem;
+            border-radius: 0.625rem;
             font-size: 1rem;
-            transition: all 0.3s ease;
+            transition: all 0.25s ease;
             background-color: white;
         }
         
@@ -96,8 +149,8 @@
         }
         
         .alert {
-            padding: 1rem;
-            border-radius: 0.5rem;
+            padding: 1rem 1.1rem;
+            border-radius: 0.75rem;
             margin-bottom: 1rem;
             display: flex;
             align-items: center;
@@ -142,27 +195,56 @@
         
         .card {
             background: white;
-            border-radius: 0.75rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
+            border: 1px solid rgba(15, 23, 42, 0.04);
+            border-radius: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            transition: all 0.25s ease;
             padding: 1.5rem;
         }
         
         .card:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+        }
+
+        /* ——— Stat icon chip (used on dashboards) ——— */
+        .stat-icon {
+            width: clamp(2.25rem, 1.8rem + 1.5vw, 3rem);
+            height: clamp(2.25rem, 1.8rem + 1.5vw, 3rem);
+            border-radius: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(0.9rem, 0.75rem + 0.5vw, 1.15rem);
+            flex-shrink: 0;
+        }
+
+        /* ——— Responsive stat numbers & tighter card padding on phones ——— */
+        .card .text-3xl {
+            font-size: clamp(1.25rem, 1rem + 1.2vw, 1.875rem);
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                padding: 1.1rem;
+            }
         }
         
         .navbar {
-            background: white;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
             position: sticky;
             top: 0;
             z-index: 50;
         }
         
         .logo {
+            font-family: 'Syne', sans-serif;
             font-size: 1.5rem;
-            font-weight: 700;
+            font-weight: 800;
+            letter-spacing: -0.02em;
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -190,13 +272,50 @@
             background-clip: text;
         }
 
-        html:has(body.auth-body),
+        html, body {
+            min-height: 100%;
+        }
+
         body.auth-body {
-            height: 100%;
             margin: 0;
             padding: 0;
             overflow-x: hidden;
             background-color: #0d1f13;
+        }
+
+        /* ——— Sidebar nav links ——— */
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.65rem 1rem;
+            border-radius: 0.75rem;
+            color: #374151;
+            font-size: 0.925rem;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        .nav-link:hover {
+            background-color: #f3f4f6;
+        }
+        .nav-link.active {
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+        .nav-link.active i {
+            color: var(--primary-dark);
+        }
+
+        #sidebar {
+            transition: transform 0.3s ease;
+        }
+        #sidebar nav::-webkit-scrollbar,
+        #ab-conv-list::-webkit-scrollbar {
+            width: 5px;
+        }
+        #sidebar::-webkit-scrollbar-thumb {
+            background: #e5e7eb;
+            border-radius: 4px;
         }
         
         @media (max-width: 640px) {
@@ -210,15 +329,15 @@
             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
             color: white;
             padding: 0.625rem 1.5rem;
-            border-radius: 0.5rem;
+            border-radius: 0.625rem;
             font-weight: 500;
-            transition: all 0.3s ease;
+            transition: all 0.25s ease;
             border: none;
             cursor: pointer;
         }
         .btn-danger:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.35);
         }
         .btn-danger:active {
             transform: translateY(0);
@@ -240,6 +359,7 @@
             border-radius: 9999px;
             font-size: 0.75rem;
             font-weight: 600;
+            letter-spacing: 0.01em;
         }
         .badge-success {
             background-color: #d1fae5;
@@ -276,7 +396,7 @@
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center gap-3">
                 <img src="{{ url_for('static', filename='agrisearch_logo.png') }}" alt="AgriSearch Logo" class="sidebar-logo-img">
-                <h1 class="text-xl font-bold text-gray-900">AgriSearch</h1>
+                <h1 class="text-xl brand-name text-gray-900">AgriSearch</h1>
             </div>
         </div>
         
@@ -286,11 +406,11 @@
             <div data-nav-section="home" class="mb-6">
                 <p class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Home</p>
                 <div class="space-y-1">
-                    <a href="{{ url_for('dashboard.index') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <a href="{{ url_for('dashboard.index') }}" class="nav-link{% if request.endpoint == 'dashboard.index' %} active{% endif %}">
                         <i class="fas fa-chart-line w-5"></i>
                         <span>Dashboard</span>
                     </a>
-                    <a href="{{ url_for('dashboard.profile') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <a href="{{ url_for('dashboard.profile') }}" class="nav-link{% if request.endpoint == 'dashboard.profile' %} active{% endif %}">
                         <i class="fas fa-user w-5"></i>
                         <span>Profile</span>
                     </a>
@@ -301,19 +421,19 @@
             <div data-nav-section="operations" class="mb-6">
                 <p class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Operations</p>
                 <div class="space-y-1">
-                    <a href="{{ url_for('farm.list_farms') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <a href="{{ url_for('farm.list_farms') }}" class="nav-link{% if request.endpoint == 'farm.list_farms' %} active{% endif %}">
                         <i class="fas fa-leaf w-5"></i>
                         <span>Farms</span>
                     </a>
-                    <a href="{{ url_for('farm.farm_map') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <a href="{{ url_for('farm.farm_map') }}" class="nav-link{% if request.endpoint == 'farm.farm_map' %} active{% endif %}">
                         <i class="fas fa-map-marked-alt w-5"></i>
                         <span>Farm Map</span>
                     </a>
-                    <a href="{{ url_for('livestock.list_livestock') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <a href="{{ url_for('livestock.list_livestock') }}" class="nav-link{% if request.endpoint == 'livestock.list_livestock' %} active{% endif %}">
                         <i class="fas fa-cow w-5"></i>
                         <span>Livestock</span>
                     </a>
-                    <a href="{{ url_for('crop.list_crops') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <a href="{{ url_for('crop.list_crops') }}" class="nav-link{% if request.endpoint == 'crop.list_crops' %} active{% endif %}">
                         <i class="fas fa-seedling w-5"></i>
                         <span>Crops</span>
                     </a>
@@ -324,7 +444,7 @@
             <div data-nav-section="health" class="mb-6">
                 <p class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Health</p>
                 <div class="space-y-1">
-                    <a href="{{ url_for('health.list_vaccines') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <a href="{{ url_for('health.list_vaccines') }}" class="nav-link{% if request.endpoint == 'health.list_vaccines' %} active{% endif %}">
                         <i class="fas fa-syringe w-5"></i>
                         <span>Vaccines</span>
                     </a>
@@ -336,7 +456,7 @@
             <div data-nav-section="supplies" class="mb-6">
                 <p class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Supplies</p>
                 <div class="space-y-1">
-                    <a href="{{ url_for('supply.inventory_view') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <a href="{{ url_for('supply.inventory_view') }}" class="nav-link{% if request.endpoint == 'supply.inventory_view' %} active{% endif %}">
                         <i class="fas fa-boxes w-5"></i>
                         <span>Inventory</span>
                     </a>
@@ -349,7 +469,7 @@
             <div data-nav-section="supplies" class="mb-6">
                 <p class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Supplies</p>
                 <div class="space-y-1">
-                    <a href="{{ url_for('supply.inventory_view') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <a href="{{ url_for('supply.inventory_view') }}" class="nav-link{% if request.endpoint == 'supply.inventory_view' %} active{% endif %}">
                         <i class="fas fa-boxes w-5"></i>
                         <span>My Inventory</span>
                     </a>
@@ -363,38 +483,38 @@
                 <p class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Distribution</p>
                 <div class="space-y-1">
                     {% if user.role == 'victoria_admin' %}
-                    <a href="{{ url_for('distribution.list_cycles') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <a href="{{ url_for('distribution.list_cycles') }}" class="nav-link{% if request.endpoint == 'distribution.list_cycles' %} active{% endif %}">
                         <i class="fas fa-circle-notch w-5"></i>
                         <span>Distribution Cycles</span>
                     </a>
-                    <a href="{{ url_for('distribution.admin_direct_requests') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <a href="{{ url_for('distribution.admin_direct_requests') }}" class="nav-link{% if request.endpoint == 'distribution.admin_direct_requests' %} active{% endif %}">
                         <i class="fas fa-inbox w-5 text-blue-600"></i>
                         <span>Direct Orders</span>
                         <span id="directRequestsBadge" class="ml-auto bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full hidden"></span>
                     </a>
-                    <a href="{{ url_for('distribution.admin_offers') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <a href="{{ url_for('distribution.admin_offers') }}" class="nav-link{% if request.endpoint == 'distribution.admin_offers' %} active{% endif %}">
                         <i class="fas fa-store w-5 text-purple-600"></i>
                         <span>Municipal Offers</span>
                     </a>
                     {% elif user.role == 'farmer' %}
-                    <a href="{{ url_for('distribution.create_request') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <a href="{{ url_for('distribution.create_request') }}" class="nav-link{% if request.endpoint == 'distribution.create_request' %} active{% endif %}">
                         <i class="fas fa-hand-paper w-5"></i>
                         <span>Order Supplies</span>
                     </a>
-                    <a href="{{ url_for('distribution.my_requests') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <a href="{{ url_for('distribution.my_requests') }}" class="nav-link{% if request.endpoint == 'distribution.my_requests' %} active{% endif %}">
                         <i class="fas fa-list w-5"></i>
                         <span>My Orders</span>
                     </a>
-                    <a href="{{ url_for('distribution.available_offers') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <a href="{{ url_for('distribution.available_offers') }}" class="nav-link{% if request.endpoint == 'distribution.available_offers' %} active{% endif %}">
                         <i class="fas fa-store w-5 text-green-600"></i>
                         <span>Available Offers</span>
                         <span id="offersBadge" class="ml-auto bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full hidden"></span>
                     </a>
-                    <a href="{{ url_for('distribution.my_claims') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <a href="{{ url_for('distribution.my_claims') }}" class="nav-link{% if request.endpoint == 'distribution.my_claims' %} active{% endif %}">
                         <i class="fas fa-ticket-alt w-5"></i>
                         <span>My Claims</span>
                     </a>
-                    <a href="{{ url_for('distribution.received_supplies') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <a href="{{ url_for('distribution.received_supplies') }}" class="nav-link{% if request.endpoint == 'distribution.received_supplies' %} active{% endif %}">
                         <i class="fas fa-inbox w-5"></i>
                         <span>Received Supplies</span>
                     </a>
@@ -408,7 +528,7 @@
             <div data-nav-section="admin" class="mb-6">
                 <p class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Administration</p>
                 <div class="space-y-1">
-                    <a href="{{ url_for('dashboard.admin_users') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <a href="{{ url_for('dashboard.admin_users') }}" class="nav-link{% if request.endpoint == 'dashboard.admin_users' %} active{% endif %}">
                         <i class="fas fa-users-cog w-5"></i>
                         <span>Users</span>
                     </a>
@@ -420,15 +540,15 @@
             <div data-nav-section="admin" class="mb-6">
                 <p class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Administration</p>
                 <div class="space-y-1">
-                    <a href="/dashboard/admin/users-system" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <a href="/dashboard/admin/users-system" class="nav-link{% if request.path == '/dashboard/admin/users-system' %} active{% endif %}">
                         <i class="fas fa-users-cog w-5"></i>
                         <span>User Management</span>
                     </a>
-                    <a href="/dashboard/admin/database" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <a href="/dashboard/admin/database" class="nav-link{% if request.path == '/dashboard/admin/database' %} active{% endif %}">
                         <i class="fas fa-database w-5"></i>
                         <span>Database</span>
                     </a>
-                    <a href="/dashboard/admin/settings-system" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <a href="/dashboard/admin/settings-system" class="nav-link{% if request.path == '/dashboard/admin/settings-system' %} active{% endif %}">
                         <i class="fas fa-cog w-5"></i>
                         <span>System Settings</span>
                     </a>
@@ -439,10 +559,10 @@
     </aside>
     {% endif %}
     
-   <!-- Top Navigation Bar (Minimal) -->
+    <!-- Top Navigation Bar (Minimal) -->
     {% if not (request.endpoint and request.endpoint.startswith('auth.')) %}
     <nav class="navbar{% if 'user_id' not in session %} auth-page{% endif %}">
-        <div class="px-4 sm:px-6 lg:px-8 py-4">
+        <div class="px-4 sm:px-6 lg:px-8 py-3">
             <div class="flex justify-between items-center">
                 <!-- Left: Hamburger + Logo (Mobile), Hamburger only (Desktop) -->
                 <div class="flex items-center gap-4">
@@ -486,10 +606,18 @@
     <div class="flash-messages max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="py-4">
+                <div class="py-2">
                     {% for category, message in messages %}
                         <div class="alert alert-{{ category }}">
+                            {% if category == 'error' %}
+                            <i class="fas fa-exclamation-circle"></i>
+                            {% elif category == 'warning' %}
+                            <i class="fas fa-exclamation-triangle"></i>
+                            {% elif category == 'info' %}
+                            <i class="fas fa-info-circle"></i>
+                            {% else %}
                             <i class="fas fa-check-circle"></i>
+                            {% endif %}
                             <span>{{ message }}</span>
                             <button onclick="this.parentElement.style.display='none';" class="ml-auto text-lg">
                                 <i class="fas fa-times"></i>
@@ -536,8 +664,8 @@
     {% endif %}
     
     <!-- Logout Confirmation Modal -->
-    <div id="logoutModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-2xl max-w-sm mx-4">
+    <div id="logoutModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style="z-index: 100000;">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm mx-4">
             <div class="p-6">
                 <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
                     <i class="fas fa-sign-out-alt text-red-600 text-xl"></i>
@@ -568,6 +696,15 @@
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     
     <script>
+        // Collapse the flash-messages wrapper entirely when there's nothing inside it
+        // (fallback for browsers without :has() support)
+        document.addEventListener('DOMContentLoaded', function() {
+            const fm = document.querySelector('.flash-messages');
+            if (fm && !fm.querySelector('.py-2')) {
+                fm.style.display = 'none';
+            }
+        });
+
         // Auto-hide flash messages after 5 seconds
         document.addEventListener('DOMContentLoaded', function() {
             const alerts = document.querySelectorAll('.alert');
@@ -779,7 +916,7 @@
             #ab-mob-toggle { display:block !important; }
         }
         @media(min-width:761px) {
-            #ab-window { width:740px; }
+            #ab-window { width:min(740px, calc(100vw - 48px)); }
         }
     </style>
 

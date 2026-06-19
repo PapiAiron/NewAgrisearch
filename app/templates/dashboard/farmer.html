@@ -6,7 +6,7 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
     <!-- Welcome Section -->
     <div class="mb-12">
-        <h1 class="text-4xl font-bold text-gray-900 mb-2">
+        <h1 class="text-3xl sm:text-4xl font-display text-gray-900 mb-2">
             Welcome, <span class="text-gradient">{{ user.full_name }}</span>!
         </h1>
         <p class="text-lg text-gray-600">
@@ -16,67 +16,67 @@
     </div>
     
     <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
         <!-- Total Farms -->
-        <div class="card p-6 hover:shadow-lg">
+        <div class="card">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-600 text-sm">Total Farms</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ total_farms }}</p>
+                    <p class="text-3xl font-display text-gray-900 mt-2">{{ total_farms }}</p>
                 </div>
-                <div class="text-4xl text-green-600 opacity-20">
+                <div class="stat-icon bg-green-100 text-green-600">
                     <i class="fas fa-tractor"></i>
                 </div>
             </div>
         </div>
         
         <!-- Total Area -->
-        <div class="card p-6 hover:shadow-lg">
+        <div class="card">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-600 text-sm">Total Area</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ "%.0f"|format(total_area) }} m²</p>
+                    <p class="text-3xl font-display text-gray-900 mt-2">{{ "%.0f"|format(total_area) }} m²</p>
                 </div>
-                <div class="text-4xl text-blue-600 opacity-20">
+                <div class="stat-icon bg-blue-100 text-blue-600">
                     <i class="fas fa-map"></i>
                 </div>
             </div>
         </div>
         
         <!-- Average Size -->
-        <div class="card p-6 hover:shadow-lg">
+        <div class="card">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-600 text-sm">Avg. Farm Size</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ "%.0f"|format(average_area) }} m²</p>
+                    <p class="text-3xl font-display text-gray-900 mt-2">{{ "%.0f"|format(average_area) }} m²</p>
                 </div>
-                <div class="text-4xl text-yellow-600 opacity-20">
+                <div class="stat-icon bg-yellow-100 text-yellow-600">
                     <i class="fas fa-chart-pie"></i>
                 </div>
             </div>
         </div>
         
         <!-- Crop Types -->
-        <div class="card p-6 hover:shadow-lg">
+        <div class="card">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-600 text-sm">Crop Types</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ crop_types|length }}</p>
+                    <p class="text-3xl font-display text-gray-900 mt-2">{{ crop_types|length }}</p>
                 </div>
-                <div class="text-4xl text-purple-600 opacity-20">
+                <div class="stat-icon bg-purple-100 text-purple-600">
                     <i class="fas fa-leaf"></i>
                 </div>
             </div>
         </div>
 
         <!-- Total Livestock -->
-        <div class="card p-6 hover:shadow-lg">
+        <div class="card">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-600 text-sm">Total Animals</p>
-                    <p class="text-3xl font-bold text-amber-700 mt-2">{{ total_livestock }}</p>
+                    <p class="text-3xl font-display text-amber-700 mt-2">{{ total_livestock }}</p>
                 </div>
-                <div class="text-4xl text-amber-600 opacity-20">
+                <div class="stat-icon bg-amber-100 text-amber-600">
                     <i class="fas fa-cow"></i>
                 </div>
             </div>
@@ -106,13 +106,13 @@
 
     <!-- Livestock Alerts -->
     {% if vaccine_alerts %}
-    <div class="bg-orange-50 border-l-4 border-orange-500 p-4 mb-8 rounded">
+    <div class="bg-orange-50 border-l-4 border-orange-500 p-4 mb-8 rounded-xl">
         <h3 class="text-orange-800 font-semibold mb-3">⚠️ Upcoming Vaccine Due</h3>
         <div class="space-y-2">
             {% for alert in vaccine_alerts[:3] %}
             <div class="text-orange-700 text-sm flex justify-between items-center">
                 <span><strong>{{ alert.livestock.unique_id or alert.livestock.name }}</strong> - {{ alert.name }}</span>
-                <span class="bg-orange-200 px-3 py-1 rounded text-xs">Due: {{ alert.next_due_date.strftime('%b %d') }}</span>
+                <span class="bg-orange-200 px-3 py-1 rounded-full text-xs">Due: {{ alert.next_due_date.strftime('%b %d') }}</span>
             </div>
             {% endfor %}
             {% if vaccine_alerts|length > 3 %}
@@ -124,56 +124,56 @@
     {% endif %}
     
     <!-- Health Metrics Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <!-- Animals with Diseases -->
-        <div class="card p-6 hover:shadow-lg border-l-4 border-red-500">
+        <div class="card border-l-4 border-red-500">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-600 text-sm">Animals with Diseases</p>
-                    <p class="text-3xl font-bold text-red-600 mt-2">{{ animals_with_diseases }}</p>
+                    <p class="text-3xl font-display text-red-600 mt-2">{{ animals_with_diseases }}</p>
                 </div>
-                <div class="text-4xl text-red-600 opacity-20">
+                <div class="stat-icon bg-red-100 text-red-600">
                     <i class="fas fa-virus"></i>
                 </div>
             </div>
         </div>
         
         <!-- Vaccines Due -->
-        <div class="card p-6 hover:shadow-lg border-l-4 border-yellow-500">
+        <div class="card border-l-4 border-yellow-500">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-600 text-sm">Vaccines Due (7 days)</p>
-                    <p class="text-3xl font-bold text-yellow-600 mt-2">{{ upcoming_vaccines }}</p>
+                    <p class="text-3xl font-display text-yellow-600 mt-2">{{ upcoming_vaccines }}</p>
                 </div>
-                <div class="text-4xl text-yellow-600 opacity-20">
+                <div class="stat-icon bg-yellow-100 text-yellow-600">
                     <i class="fas fa-syringe"></i>
                 </div>
             </div>
         </div>
         
         <!-- Vaccine Inventory -->
-        <div class="card p-6 hover:shadow-lg border-l-4 border-green-500">
+        <div class="card border-l-4 border-green-500">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-600 text-sm">Vaccine Stock</p>
-                    <p class="text-3xl font-bold text-green-600 mt-2">{{ vaccines_count }}</p>
+                    <p class="text-3xl font-display text-green-600 mt-2">{{ vaccines_count }}</p>
                     <p class="text-xs text-red-600 mt-1">{{ expired_vaccines }} expired, {{ expiring_soon_vaccines }} expiring</p>
                 </div>
-                <div class="text-4xl text-green-600 opacity-20">
+                <div class="stat-icon bg-green-100 text-green-600">
                     <i class="fas fa-box"></i>
                 </div>
             </div>
         </div>
         
         <!-- Health Alerts -->
-        <div class="card p-6 hover:shadow-lg border-l-4 border-orange-500">
+        <div class="card border-l-4 border-orange-500">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-600 text-sm">Health Alerts</p>
-                    <p class="text-3xl font-bold text-orange-600 mt-2">{{ total_health_alerts }}</p>
+                    <p class="text-3xl font-display text-orange-600 mt-2">{{ total_health_alerts }}</p>
                     <p class="text-xs text-red-600 mt-1">{{ critical_alerts }} critical</p>
                 </div>
-                <div class="text-4xl text-orange-600 opacity-20">
+                <div class="stat-icon bg-orange-100 text-orange-600">
                     <i class="fas fa-exclamation-circle"></i>
                 </div>
             </div>
@@ -184,48 +184,48 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         <!-- Quick Actions -->
         <div class="lg:col-span-1">
-            <div class="card p-8 h-full">
-                <h2 class="text-2xl font-bold text-gray-900 mb-6">
+            <div class="card h-full">
+                <h2 class="text-2xl font-display text-gray-900 mb-6">
                     <i class="fas fa-bolt text-blue-600 mr-3"></i>Quick Actions
                 </h2>
                 
                 <div class="space-y-3">
-                    <a href="{{ url_for('farm.list_farms') }}" class="w-full block px-4 py-3 rounded-lg border border-gray-200 hover:bg-green-50 hover:border-green-300 transition">
+                    <a href="{{ url_for('farm.list_farms') }}" class="w-full block px-4 py-3 rounded-xl border border-gray-200 hover:bg-green-50 hover:border-green-300 transition">
                         <div class="flex items-center">
                             <i class="fas fa-list text-green-600 mr-3 text-lg"></i>
                             <span class="font-medium text-gray-900">View All Farms</span>
                         </div>
                     </a>
                     
-                    <a href="{{ url_for('farm.create_farm') }}" class="w-full block px-4 py-3 rounded-lg border border-gray-200 hover:bg-green-50 hover:border-green-300 transition">
+                    <a href="{{ url_for('farm.create_farm') }}" class="w-full block px-4 py-3 rounded-xl border border-gray-200 hover:bg-green-50 hover:border-green-300 transition">
                         <div class="flex items-center">
                             <i class="fas fa-plus text-green-600 mr-3 text-lg"></i>
                             <span class="font-medium text-gray-900">Register New Farm</span>
                         </div>
                     </a>
 
-                    <a href="{{ url_for('livestock.list_livestock') }}" class="w-full block px-4 py-3 rounded-lg border border-gray-200 hover:bg-amber-50 hover:border-amber-300 transition">
+                    <a href="{{ url_for('livestock.list_livestock') }}" class="w-full block px-4 py-3 rounded-xl border border-gray-200 hover:bg-amber-50 hover:border-amber-300 transition">
                         <div class="flex items-center">
                             <i class="fas fa-cow text-amber-600 mr-3 text-lg"></i>
                             <span class="font-medium text-gray-900">Manage Livestock</span>
                         </div>
                     </a>
 
-                    <a href="{{ url_for('distribution.create_request') }}" class="w-full block px-4 py-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition">
+                    <a href="{{ url_for('distribution.create_request') }}" class="w-full block px-4 py-3 rounded-xl border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition">
                         <div class="flex items-center">
                             <i class="fas fa-cart-plus text-blue-600 mr-3 text-lg"></i>
                             <span class="font-medium text-gray-900">Request Supplies</span>
                         </div>
                     </a>
 
-                    <a href="{{ url_for('distribution.my_requests') }}" class="w-full block px-4 py-3 rounded-lg border border-gray-200 hover:bg-purple-50 hover:border-purple-300 transition">
+                    <a href="{{ url_for('distribution.my_requests') }}" class="w-full block px-4 py-3 rounded-xl border border-gray-200 hover:bg-purple-50 hover:border-purple-300 transition">
                         <div class="flex items-center">
                             <i class="fas fa-box text-purple-600 mr-3 text-lg"></i>
                             <span class="font-medium text-gray-900">My Distributions</span>
                         </div>
                     </a>
                     
-                    <a href="{{ url_for('dashboard.profile') }}" class="w-full block px-4 py-3 rounded-lg border border-gray-200 hover:bg-green-50 hover:border-green-300 transition">
+                    <a href="{{ url_for('dashboard.profile') }}" class="w-full block px-4 py-3 rounded-xl border border-gray-200 hover:bg-green-50 hover:border-green-300 transition">
                         <div class="flex items-center">
                             <i class="fas fa-user-circle text-green-600 mr-3 text-lg"></i>
                             <span class="font-medium text-gray-900">View Profile</span>
@@ -237,8 +237,8 @@
 
         <!-- Livestock by Type -->
         <div class="lg:col-span-1">
-            <div class="card p-8">
-                <h2 class="text-2xl font-bold text-gray-900 mb-6">
+            <div class="card">
+                <h2 class="text-2xl font-display text-gray-900 mb-6">
                     <i class="fas fa-chart-bar text-amber-600 mr-3"></i>Animals by Type
                 </h2>
                 
@@ -260,8 +260,8 @@
 
         <!-- Account Info -->
         <div class="lg:col-span-1">
-            <div class="card p-8 h-full">
-                <h2 class="text-2xl font-bold text-gray-900 mb-6">
+            <div class="card h-full">
+                <h2 class="text-2xl font-display text-gray-900 mb-6">
                     <i class="fas fa-info-circle text-blue-600 mr-3"></i>Account Information
                 </h2>
                 
