@@ -579,14 +579,21 @@
                 
                 <!-- Right: User Menu -->
                 {% if 'user_id' in session %}
-                <div class="flex items-center gap-4">
-                    <div class="hidden sm:flex items-center gap-2 text-gray-600">
+                <div class="relative" id="userMenuWrapper">
+                    <button onclick="toggleUserMenu()" class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition px-2 py-1.5 rounded-lg hover:bg-gray-100">
                         <i class="fas fa-user-circle text-lg"></i>
-                        <span class="text-sm font-medium">{{ session.full_name }}</span>
-                    </div>
-                    <button onclick="confirmLogout()" class="btn-secondary text-sm">
-                        <i class="fas fa-sign-out-alt"></i> Logout
+                        <span class="hidden sm:inline text-sm font-medium">{{ session.full_name }}</span>
+                        <i class="fas fa-chevron-down text-xs text-gray-400"></i>
                     </button>
+                    <div id="userMenuDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+                        <a href="{{ url_for('dashboard.profile') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition">
+                            <i class="fas fa-user w-4"></i> Profile
+                        </a>
+                        <div class="border-t border-gray-100 my-1"></div>
+                        <button onclick="confirmLogout()" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition text-left">
+                            <i class="fas fa-sign-out-alt w-4"></i> Logout
+                        </button>
+                    </div>
                 </div>
                 {% else %}
                 <div class="flex gap-2">
@@ -730,6 +737,19 @@
         function proceedLogout() {
             window.location.href = '{{ url_for("auth.logout") }}';
         }
+
+        function toggleUserMenu() {
+            document.getElementById('userMenuDropdown').classList.toggle('hidden');
+        }
+        document.addEventListener('click', function(e) {
+            const wrapper = document.getElementById('userMenuWrapper');
+            const dropdown = document.getElementById('userMenuDropdown');
+            if (wrapper && dropdown && !wrapper.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+        
+        // Close modal if user clicks outside of it
         
         // Close modal if user clicks outside of it
         document.getElementById('logoutModal').addEventListener('click', function(event) {

@@ -211,8 +211,8 @@ document.getElementById('satBtn').addEventListener('click', function () {
 
 const pinIcon = L.divIcon({
     className:'',
-    html:`<div style="width:18px;height:18px;background:#10b981;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)"></div>`,
-    iconSize:[18,18], iconAnchor:[9,18]
+    html:`<div style="position:relative;width:28px;height:28px;"><div style="position:absolute;left:4px;top:4px;width:20px;height:20px;background:#10b981;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5);"></div><div style="position:absolute;left:11px;top:11px;width:6px;height:6px;background:#fff;border-radius:50%;"></div></div>`,
+    iconSize:[28,28], iconAnchor:[14,28]
 });
 
 let marker = null;

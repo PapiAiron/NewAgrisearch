@@ -4,7 +4,7 @@
 {% block extra_css %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-    #map-page-wrapper { display:flex; height:calc(100vh - 64px); overflow:hidden; position:relative; }
+    #map-page-wrapper { display:flex; height:calc(100vh - 64px); overflow:hidden; position:relative; z-index:1; }
 
     #map-panel {
         width:320px; min-width:320px; display:flex; flex-direction:column;
@@ -415,8 +415,8 @@ function makeMarker(feature) {
 
     const icon = L.divIcon({
         className:'',
-        html:`<div style="width:13px;height:13px;background:${color};border-radius:50%;border:2.5px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.45)"></div>`,
-        iconSize:[13,13], iconAnchor:[6,6]
+        html:`<div style="position:relative;width:24px;height:24px;"><div style="position:absolute;left:3.5px;top:3.5px;width:17px;height:17px;background:${color};border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.45);"></div><div style="position:absolute;left:9px;top:9px;width:6px;height:6px;background:#fff;border-radius:50%;"></div></div>`,
+        iconSize:[24,24], iconAnchor:[12,24]
     });
 
     const marker = L.marker([lat,lng], {icon});
