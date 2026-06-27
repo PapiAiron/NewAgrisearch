@@ -102,6 +102,17 @@
   .auth-match-msg.bad{color:#dc2626}
   @keyframes authFadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
   @media(prefers-reduced-motion:reduce){.auth-card{animation:none}}
+  .auth-err{font-size:11.5px;color:#dc2626;margin-top:5px;display:none;align-items:center;gap:5px}
+  .auth-err.show{display:flex}
+  .auth-strength{display:none;margin-top:8px}
+  .auth-strength.show{display:block}
+  .auth-strength-track{height:5px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-bottom:4px}
+  .auth-strength-fill{height:100%;border-radius:999px;transition:width .3s,background .3s;width:0}
+  .auth-strength-row{display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px}
+  .auth-strength-lbl{font-weight:700}
+  .auth-strength-checks{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px}
+  .auth-strength-chk{font-size:11px;display:flex;align-items:center;gap:4px;color:#9ca3af;transition:color .2s}
+  .auth-strength-chk.met{color:#16a34a}
 </style>
 {% endblock %}
 
@@ -122,46 +133,65 @@
       <p class="auth-sub">Join AgriSearch today</p>
 
       <form method="POST" class="space-y-4" style="margin-top:26px" novalidate>
-        <!-- Full Name -->
+          <!-- Full Name -->
         <div>
           <label for="full_name" class="auth-label"><i class="fas fa-id-card"></i>Full Name</label>
-          <input type="text" id="full_name" name="full_name" class="auth-input" placeholder="Juan Dela Cruz" required autofocus>
+          <input type="text" id="full_name" name="full_name" class="auth-input" placeholder="Juan Dela Cruz" required autofocus oninput="vFullName(this.value)">
+          <p id="err_full_name" class="auth-err"><i class="fas fa-exclamation-circle" style="font-size:10px"></i><span></span></p>
         </div>
 
         <!-- Email -->
         <div>
           <label for="email" class="auth-label"><i class="fas fa-envelope"></i>Email</label>
-          <input type="email" id="email" name="email" class="auth-input" placeholder="juan@example.com" required>
+          <input type="email" id="email" name="email" class="auth-input" placeholder="juan@example.com" required oninput="vEmail(this.value)">
+          <p id="err_email" class="auth-err"><i class="fas fa-exclamation-circle" style="font-size:10px"></i><span></span></p>
         </div>
 
         <!-- Username -->
         <div>
           <label for="username" class="auth-label"><i class="fas fa-user"></i>Username</label>
-          <input type="text" id="username" name="username" class="auth-input" placeholder="juandelacruz" minlength="3" required>
+          <input type="text" id="username" name="username" class="auth-input" placeholder="juandelacruz" minlength="3" required oninput="vUsername(this.value)">
+          <p id="err_username" class="auth-err"><i class="fas fa-exclamation-circle" style="font-size:10px"></i><span></span></p>
           <p class="auth-hint">At least 3 characters</p>
         </div>
 
         <!-- Barangay -->
         <div>
           <label for="barangay_id" class="auth-label"><i class="fas fa-map-marker-alt"></i>Barangay</label>
-          <select id="barangay_id" name="barangay_id" class="auth-input" required>
+          <select id="barangay_id" name="barangay_id" class="auth-input" required onchange="vBarangay(this.value)">
             <option value="">Select your barangay</option>
             {% for id, barangay in barangays.items() %}
             <option value="{{ id }}">{{ barangay.name }}</option>
             {% endfor %}
           </select>
+          <p id="err_barangay" class="auth-err"><i class="fas fa-exclamation-circle" style="font-size:10px"></i><span></span></p>
         </div>
 
         <!-- Password -->
         <div>
           <label for="password" class="auth-label"><i class="fas fa-lock"></i>Password</label>
           <div class="auth-field">
-            <input type="password" id="password" name="password" class="auth-input" placeholder="••••••••" minlength="8" required oninput="authCheckMatch()">
+            <input type="password" id="password" name="password" class="auth-input" placeholder="••••••••" minlength="8" required oninput="vPassword(this.value)">
             <button type="button" class="auth-pwd-toggle" onclick="authTogglePwd('password', this)" aria-label="Show password">
               <i class="fas fa-eye"></i>
             </button>
           </div>
+          <p id="err_password" class="auth-err"><i class="fas fa-exclamation-circle" style="font-size:10px"></i><span></span></p>
           <p class="auth-hint">At least 8 characters</p>
+          <div id="strength_wrap" class="auth-strength">
+            <div class="auth-strength-row">
+              <span style="color:#6b7280;font-size:11px">Password strength</span>
+              <span id="strength_lbl" class="auth-strength-lbl"></span>
+            </div>
+            <div class="auth-strength-track"><div id="strength_fill" class="auth-strength-fill"></div></div>
+            <div class="auth-strength-checks">
+              <span class="auth-strength-chk" id="chk_len"><i class="fas fa-check" style="font-size:9px"></i>8+ characters</span>
+              <span class="auth-strength-chk" id="chk_upper"><i class="fas fa-check" style="font-size:9px"></i>Uppercase letter</span>
+              <span class="auth-strength-chk" id="chk_lower"><i class="fas fa-check" style="font-size:9px"></i>Lowercase letter</span>
+              <span class="auth-strength-chk" id="chk_num"><i class="fas fa-check" style="font-size:9px"></i>Number (0–9)</span>
+              <span class="auth-strength-chk" id="chk_sym"><i class="fas fa-check" style="font-size:9px"></i>Special character</span>
+            </div>
+          </div>
         </div>
 
         <!-- Confirm Password -->
@@ -173,6 +203,7 @@
               <i class="fas fa-eye"></i>
             </button>
           </div>
+          <p id="err_confirm" class="auth-err"><i class="fas fa-exclamation-circle" style="font-size:10px"></i><span></span></p>
           <p id="authMatchMsg" class="auth-match-msg"></p>
         </div>
 
@@ -198,29 +229,125 @@
 
 {% block extra_js %}
 <script>
+  function showErr(id, msg) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.querySelector('span').textContent = msg;
+    el.classList.add('show');
+  }
+  function clearErr(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('show');
+  }
+
+  function vFullName(v) {
+    const t = v.trim();
+    if (!t) return showErr('err_full_name', 'Full name is required.');
+    if (t.length < 3) return showErr('err_full_name', 'Name is too short.');
+    if (t.split(/\s+/).length < 2) return showErr('err_full_name', 'Please enter both first and last name.');
+    if (!/^[a-zA-ZÀ-ÖØ-öø-ÿ]+([ '\-][a-zA-ZÀ-ÖØ-öø-ÿ]+)*$/.test(t))
+      return showErr('err_full_name', 'Name may only contain letters, spaces, hyphens, and apostrophes.');
+    clearErr('err_full_name');
+  }
+
+  function vEmail(v) {
+    const t = v.trim();
+    if (!t) return showErr('err_email', 'Email is required.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t)) return showErr('err_email', 'Please enter a valid email (e.g. you@example.com).');
+    clearErr('err_email');
+  }
+
+  function vUsername(v) {
+    const t = v.trim();
+    if (!t) return showErr('err_username', 'Username is required.');
+    if (t.length < 3) return showErr('err_username', 'Username must be at least 3 characters.');
+    if (!/^[a-zA-Z0-9_]+$/.test(t)) return showErr('err_username', 'Only letters, numbers, and underscores allowed.');
+    clearErr('err_username');
+  }
+
+  function vBarangay(v) {
+    if (!v) return showErr('err_barangay', 'Please select your barangay.');
+    clearErr('err_barangay');
+  }
+
+  const STRENGTH_LEVELS = [
+    { label: 'Very weak', color: '#ef4444' },
+    { label: 'Weak',      color: '#f97316' },
+    { label: 'Fair',      color: '#eab308' },
+    { label: 'Strong',    color: '#3b82f6' },
+    { label: 'Very strong', color: '#16a34a' },
+  ];
+
+  function vPassword(v) {
+    if (!v) { clearErr('err_password'); document.getElementById('strength_wrap').classList.remove('show'); return; }
+
+    const checks = {
+      len:   v.length >= 8,
+      upper: /[A-Z]/.test(v),
+      lower: /[a-z]/.test(v),
+      num:   /\d/.test(v),
+      sym:   /[^a-zA-Z0-9]/.test(v),
+    };
+
+    ['len','upper','lower','num','sym'].forEach(k => {
+      document.getElementById('chk_' + k).classList.toggle('met', checks[k]);
+    });
+
+    let score = 0;
+    if (checks.len)   score++;
+    if (v.length >= 12) score++;
+    if (checks.upper && checks.lower) score++;
+    if (checks.num)   score++;
+    if (checks.sym)   score++;
+    score = Math.min(score, 5);
+
+    const lvl = STRENGTH_LEVELS[Math.max(0, score - 1)];
+    const fill = document.getElementById('strength_fill');
+    const lbl  = document.getElementById('strength_lbl');
+    fill.style.width = ((score / 5) * 100) + '%';
+    fill.style.background = lvl.color;
+    lbl.textContent = lvl.label;
+    lbl.style.color = lvl.color;
+    document.getElementById('strength_wrap').classList.add('show');
+
+    if (!v) return showErr('err_password', 'Password is required.');
+    if (!checks.len)   return showErr('err_password', 'Password must be at least 8 characters.');
+    if (!checks.upper) return showErr('err_password', 'Add at least one uppercase letter.');
+    if (!checks.lower) return showErr('err_password', 'Add at least one lowercase letter.');
+    if (!checks.num)   return showErr('err_password', 'Add at least one number.');
+    clearErr('err_password');
+
+    const confirm = document.getElementById('password_confirm').value;
+    if (confirm) authCheckMatch();
+  }
+
+  function authCheckMatch() {
+    const pwd     = document.getElementById('password').value;
+    const confirm = document.getElementById('password_confirm').value;
+    const msg     = document.getElementById('authMatchMsg');
+    const err     = document.getElementById('err_confirm');
+
+    if (!confirm) { msg.classList.remove('show'); clearErr('err_confirm'); return; }
+
+    if (pwd === confirm) {
+      clearErr('err_confirm');
+      msg.classList.add('show','ok'); msg.classList.remove('bad');
+      msg.textContent = '✓ Passwords match';
+    } else {
+      showErr('err_confirm', 'Passwords do not match.');
+      msg.classList.remove('show');
+    }
+  }
+
   function authTogglePwd(id, btn) {
-    const input = document.getElementById(id);
-    const icon = btn.querySelector('i');
+    const input   = document.getElementById(id);
+    const icon    = btn.querySelector('i');
     const showing = input.type === 'text';
     input.type = showing ? 'password' : 'text';
     icon.classList.toggle('fa-eye', showing);
     icon.classList.toggle('fa-eye-slash', !showing);
     btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
-  }
-
-  function authCheckMatch() {
-    const pwd = document.getElementById('password').value;
-    const confirm = document.getElementById('password_confirm').value;
-    const msg = document.getElementById('authMatchMsg');
-    if (!confirm) { msg.classList.remove('show'); return; }
-    msg.classList.add('show');
-    if (pwd === confirm) {
-      msg.textContent = '✓ Passwords match';
-      msg.classList.add('ok'); msg.classList.remove('bad');
-    } else {
-      msg.textContent = '✕ Passwords do not match';
-      msg.classList.add('bad'); msg.classList.remove('ok');
-    }
   }
 </script>
 {% endblock %}
