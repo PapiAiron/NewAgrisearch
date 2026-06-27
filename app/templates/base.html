@@ -577,22 +577,38 @@
                     </div>
                 </div>
                 
-                <!-- Right: User Menu -->
+                <!-- Right: Notifications + User Menu -->
                 {% if 'user_id' in session %}
-                <div class="relative" id="userMenuWrapper">
-                    <button onclick="toggleUserMenu()" class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition px-2 py-1.5 rounded-lg hover:bg-gray-100">
-                        <i class="fas fa-user-circle text-lg"></i>
-                        <span class="hidden sm:inline text-sm font-medium">{{ session.full_name }}</span>
-                        <i class="fas fa-chevron-down text-xs text-gray-400"></i>
-                    </button>
-                    <div id="userMenuDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
-                        <a href="{{ url_for('dashboard.profile') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition">
-                            <i class="fas fa-user w-4"></i> Profile
-                        </a>
-                        <div class="border-t border-gray-100 my-1"></div>
-                        <button onclick="confirmLogout()" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition text-left">
-                            <i class="fas fa-sign-out-alt w-4"></i> Logout
+                <div class="flex items-center gap-2">
+                    <div class="relative" id="notifWrapper">
+                        <button onclick="toggleNotifPanel()" class="relative flex items-center justify-center w-10 h-10 text-gray-600 hover:text-gray-900 transition rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-bell text-lg"></i>
+                            <span id="notifBadge" class="hidden absolute top-1 right-1 min-w-[16px] h-4 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none"></span>
                         </button>
+                        <div id="notifPanel" class="hidden absolute right-0 mt-2 w-[90vw] max-w-sm sm:w-96 bg-white rounded-xl shadow-lg border border-gray-200 z-50 max-h-[70vh] overflow-y-auto">
+                            <div class="px-4 py-3 border-b border-gray-100">
+                                <span class="text-sm font-semibold text-gray-800">Notifications</span>
+                            </div>
+                            <div id="notifList" class="divide-y divide-gray-100">
+                                <div class="px-4 py-6 text-center text-sm text-gray-400">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="relative" id="userMenuWrapper">
+                        <button onclick="toggleUserMenu()" class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition px-2 py-1.5 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-user-circle text-lg"></i>
+                            <span class="hidden sm:inline text-sm font-medium">{{ session.full_name }}</span>
+                            <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+                        </button>
+                        <div id="userMenuDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+                            <a href="{{ url_for('dashboard.profile') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition">
+                                <i class="fas fa-user w-4"></i> Profile
+                            </a>
+                            <div class="border-t border-gray-100 my-1"></div>
+                            <button onclick="confirmLogout()" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition text-left">
+                                <i class="fas fa-sign-out-alt w-4"></i> Logout
+                            </button>
+                        </div>
                     </div>
                 </div>
                 {% else %}
@@ -747,6 +763,64 @@
             if (wrapper && dropdown && !wrapper.contains(e.target)) {
                 dropdown.classList.add('hidden');
             }
+        });
+
+        const NOTIF_LEVEL_STYLES = {
+            info:    { bg: 'bg-blue-50',   icon: 'text-blue-600' },
+            warning: { bg: 'bg-yellow-50', icon: 'text-yellow-600' },
+            danger:  { bg: 'bg-red-50',    icon: 'text-red-600' },
+            success: { bg: 'bg-green-50',  icon: 'text-green-600' }
+        };
+
+        function toggleNotifPanel() {
+            const panel = document.getElementById('notifPanel');
+            const wasHidden = panel.classList.contains('hidden');
+            panel.classList.toggle('hidden');
+            if (wasHidden) loadNotifications();
+        }
+
+        function renderNotifications(items) {
+            const list = document.getElementById('notifList');
+            const badge = document.getElementById('notifBadge');
+            if (!items || items.length === 0) {
+                list.innerHTML = '<div class="px-4 py-6 text-center text-sm text-gray-400"><i class="fas fa-bell-slash mb-2 block text-xl"></i>No notifications right now</div>';
+                badge.classList.add('hidden');
+                return;
+            }
+            badge.textContent = items.length > 9 ? '9+' : items.length;
+            badge.classList.remove('hidden');
+            list.innerHTML = items.map(n => {
+                const style = NOTIF_LEVEL_STYLES[n.level] || NOTIF_LEVEL_STYLES.info;
+                return `<a href="${n.url || '#'}" class="flex gap-3 px-4 py-3 hover:bg-gray-50 transition">
+                    <div class="w-9 h-9 rounded-full ${style.bg} flex items-center justify-center flex-shrink-0">
+                        <i class="fas ${n.icon || 'fa-bell'} ${style.icon} text-sm"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-sm font-semibold text-gray-800 break-words">${n.title}</p>
+                        <p class="text-xs text-gray-500 mt-0.5 break-words leading-relaxed">${n.message}</p>
+                    </div>
+                </a>`;
+            }).join('');
+        }
+
+        function loadNotifications() {
+            fetch('/dashboard/api/notifications')
+                .then(r => r.ok ? r.json() : null)
+                .then(data => { if (data) renderNotifications(data.notifications); })
+                .catch(() => {});
+        }
+
+        document.addEventListener('click', function(e) {
+            const wrapper = document.getElementById('notifWrapper');
+            const panel = document.getElementById('notifPanel');
+            if (wrapper && panel && !wrapper.contains(e.target)) {
+                panel.classList.add('hidden');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadNotifications();
+            setInterval(loadNotifications, 60000);
         });
         
         // Close modal if user clicks outside of it

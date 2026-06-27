@@ -897,3 +897,141 @@ def admin_settings_system():
         logger.error(f"[ADMIN_SETTINGS_SYSTEM] Error loading system settings: {str(e)}", exc_info=True)
         flash('An error occurred while loading system settings.', 'error')
         return redirect(url_for('dashboard.system_admin_dashboard'))
+
+
+@dashboard_bp.route('/api/notifications', methods=['GET'])
+@login_required
+def api_notifications():
+    """Role-based, user-specific notifications (computed live from current data)"""
+    user = User.query.get(session.get('user_id'))
+    if not user:
+        return jsonify({'notifications': [], 'unread_count': 0})
+
+    notifications = []
+    try:
+        if user.role == 'farmer':
+            farms = Farm.query.filter_by(owner_id=user.id, is_active=True).all()
+            farm_ids = [f.id for f in farms]
+            farmer_barangays = list({f.barangay_name for f in farms})
+
+            livestock_ids = [l.id for l in Livestock.query.filter(Livestock.farm_id.in_(farm_ids)).all()] if farm_ids else []
+
+            if livestock_ids:
+                upcoming_vaccines = HealthRecord.query.filter(
+                    HealthRecord.livestock_id.in_(livestock_ids),
+                    HealthRecord.record_type == 'vaccine',
+                    HealthRecord.next_due_date != None,
+                    HealthRecord.next_due_date <= datetime.utcnow() + timedelta(days=7),
+                    HealthRecord.next_due_date > datetime.utcnow()
+                ).count()
+                if upcoming_vaccines:
+                    notifications.append({
+                        'icon': 'fa-syringe', 'level': 'warning',
+                        'title': 'Upcoming vaccines',
+                        'message': f'{upcoming_vaccines} vaccine(s) due within 7 days.',
+                        'url': '/health/vaccines'
+                    })
+
+                critical_alerts = HealthAlert.query.filter(
+                    HealthAlert.livestock_id.in_(livestock_ids),
+                    HealthAlert.is_resolved == False,
+                    HealthAlert.priority == 'critical'
+                ).count()
+                if critical_alerts:
+                    notifications.append({
+                        'icon': 'fa-triangle-exclamation', 'level': 'danger',
+                        'title': 'Critical health alerts',
+                        'message': f'{critical_alerts} critical alert(s) need attention.',
+                        'url': '/health/alerts'
+                    })
+
+            from datetime import date
+            today = date.today()
+            open_offers = MunicipalOffer.query.filter(
+                MunicipalOffer.status == 'open',
+                MunicipalOffer.claim_deadline >= today,
+                db.or_(
+                    MunicipalOffer.target_barangay == None,
+                    MunicipalOffer.target_barangay.in_(farmer_barangays)
+                )
+            ).count()
+            if open_offers:
+                notifications.append({
+                    'icon': 'fa-store', 'level': 'success',
+                    'title': 'Municipal offers available',
+                    'message': f'{open_offers} open offer(s) you can register for.',
+                    'url': '/distribution/available-offers'
+                })
+
+            ready_to_claim = DistributionRequest.query.filter(
+                DistributionRequest.farm_id.in_(farm_ids),
+                DistributionRequest.status == 'ready_to_claim'
+            ).count() if farm_ids else 0
+            if ready_to_claim:
+                notifications.append({
+                    'icon': 'fa-box-open', 'level': 'success',
+                    'title': 'Supplies ready to claim',
+                    'message': f'{ready_to_claim} request(s) ready for pickup.',
+                    'url': '/distribution/my-requests'
+                })
+
+        elif user.role == 'victoria_admin':
+            direct_pending = DistributionRequest.query.filter(
+                DistributionRequest.status == 'pending',
+                DistributionRequest.request_type == 'direct_municipal'
+            ).count()
+            if direct_pending:
+                notifications.append({
+                    'icon': 'fa-inbox', 'level': 'info',
+                    'title': 'Direct supply requests',
+                    'message': f'{direct_pending} pending request(s) awaiting review.',
+                    'url': '/distribution/admin/direct-requests'
+                })
+
+            officer_approved = DistributionRequest.query.filter(
+                DistributionRequest.status == 'officer_approved'
+            ).count()
+            if officer_approved:
+                notifications.append({
+                    'icon': 'fa-clipboard-check', 'level': 'info',
+                    'title': 'Requests awaiting final approval',
+                    'message': f'{officer_approved} request(s) need your decision.',
+                    'url': '/distribution/admin/requests'
+                })
+
+            livestock_ids = [l.id for l in Livestock.query.all()]
+            if livestock_ids:
+                critical_alerts = HealthAlert.query.filter(
+                    HealthAlert.livestock_id.in_(livestock_ids),
+                    HealthAlert.is_resolved == False,
+                    HealthAlert.priority == 'critical'
+                ).count()
+                if critical_alerts:
+                    notifications.append({
+                        'icon': 'fa-triangle-exclamation', 'level': 'danger',
+                        'title': 'Critical livestock alerts',
+                        'message': f'{critical_alerts} critical alert(s) across all farms.',
+                        'url': '/health/alerts'
+                    })
+
+        elif user.role == 'system_admin':
+            inactive_users = User.query.filter_by(is_active=False).count()
+            if inactive_users:
+                notifications.append({
+                    'icon': 'fa-user-slash', 'level': 'warning',
+                    'title': 'Inactive accounts',
+                    'message': f'{inactive_users} user account(s) are inactive.',
+                    'url': '/dashboard/admin/users-system'
+                })
+            unverified_users = User.query.filter_by(is_verified=False).count()
+            if unverified_users:
+                notifications.append({
+                    'icon': 'fa-user-check', 'level': 'info',
+                    'title': 'Unverified accounts',
+                    'message': f'{unverified_users} account(s) await verification.',
+                    'url': '/dashboard/admin/users-system'
+                })
+    except Exception as e:
+        logger.error(f"[NOTIFICATIONS] Error building notifications for {user.username}: {str(e)}", exc_info=True)
+
+    return jsonify({'notifications': notifications, 'unread_count': len(notifications)})
